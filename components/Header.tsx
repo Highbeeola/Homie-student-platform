@@ -1,6 +1,6 @@
 // src/components/Header.tsx
 
-import Link from 'next/link';
+import Link from "next/link";
 
 // The word "export" right here is the most important part.
 // Make sure it exists in your file.
@@ -14,7 +14,9 @@ export function Header() {
         </div>
         <div>
           <h1 className="text-lg font-extrabold tracking-wide">Homie</h1>
-          <div className="text-xs text-[#bcdff0]">Students helping students</div>
+          <div className="text-xs text-[#bcdff0]">
+            Students helping students
+          </div>
         </div>
       </Link>
 
@@ -27,10 +29,10 @@ export function Header() {
           Add Listing
         </Link>
         <Link
-          href="/profile"
-          className="rounded-full px-3 py-1.5 font-semibold text-[#e6f9ff] transition-all hover:bg-white/10"
+          href="/auth" // <-- Changed this href
+          className="rounded-full bg-white/10 px-4 py-2 font-semibold text-[#e6f9ff] transition-all hover:bg-white/20"
         >
-          Profile
+          Sign In / Sign Up
         </Link>
       </nav>
     </header>
