@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
 import { Header } from "@/components/Header";
 import { useRouter } from "next/navigation";
@@ -12,10 +12,17 @@ export default function AuthClient() {
   const [error, setError] = useState<string | null>(null);
   const [emailRedirectTo, setEmailRedirectTo] = useState("");
   const router = useRouter();
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-  );
+  const supabaseRef = useRef<any | null>(null);
+
+  useEffect(() => {
+    // Initialize the browser client only on the client runtime
+    if (!supabaseRef.current) {
+      supabaseRef.current = createBrowserClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+      );
+    }
+  }, []);
 
   useEffect(() => {
     setEmailRedirectTo(`${window.location.origin}/auth/callback`);
@@ -27,7 +34,7 @@ export default function AuthClient() {
 
     try {
       if (isSigningUp) {
-        const { error } = await supabase.auth.signUp({
+        const { error } = await supabaseRef.current.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: emailRedirectTo },
@@ -35,7 +42,7 @@ export default function AuthClient() {
         if (error) throw error;
         alert("Success! Please check your email to confirm your account.");
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await supabaseRef.current.auth.signInWithPassword({
           email,
           password,
         });
