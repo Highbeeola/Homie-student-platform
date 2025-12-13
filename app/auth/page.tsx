@@ -2,22 +2,27 @@
 
 "use client";
 
-import { useState } from "react";
-// import { supabase } from '@/lib/supabaseClient'; // 1. DELETE THIS LINE
+import { useState, useEffect } from "react"; // 1. Import useEffect
 import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
 import { Header } from "@/components/Header";
 import { useRouter } from "next/navigation";
 
-export default function AuthPage() {    
+export default function AuthPage() {
   const [isSigningUp, setIsSigningUp] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [emailRedirectTo, setEmailRedirectTo] = useState(""); // 2. Add state for the redirect URL
   const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+
+  // 3. This effect runs ONLY in the browser, after the component has loaded
+  useEffect(() => {
+    setEmailRedirectTo(`${window.location.origin}/auth/callback`);
+  }, []);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +35,7 @@ export default function AuthPage() {
           email,
           password,
           options: {
-            // This tells Supabase where to redirect the user after they click the confirmation link in their email
-            emailRedirectTo: `${location.origin}/auth/callback`,
+            emailRedirectTo: emailRedirectTo, // 4. Use the state variable here
           },
         });
         if (error) throw error;
@@ -45,7 +49,7 @@ export default function AuthPage() {
         if (error) throw error;
         // Redirect to homepage after successful login
         router.push("/");
-        router.refresh(); // This ensures the page re-renders with the user logged in
+        router.refresh();
       }
     } catch (err: any) {
       setError(err.message);
@@ -58,13 +62,12 @@ export default function AuthPage() {
       <div className="mx-auto max-w-6xl px-4 pb-16">
         <Header />
         <div className="mx-auto mt-20 max-w-md">
-          {/* ... form JSX here ... */}
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl">
             <h2 className="text-center text-2xl font-bold">
               {isSigningUp ? "Create Your Account" : "Sign In to Homie"}
             </h2>
-
             <form onSubmit={handleAuth} className="mt-8 space-y-6">
+              {/* Form inputs are the same */}
               <div>
                 <label
                   htmlFor="email"
@@ -99,11 +102,9 @@ export default function AuthPage() {
                   className="mt-2 w-full rounded-lg border-none bg-white/5 px-4 py-3 text-white outline-none"
                 />
               </div>
-
               {error && (
                 <p className="text-center text-sm text-red-400">{error}</p>
               )}
-
               <div>
                 <button
                   type="submit"
@@ -113,7 +114,6 @@ export default function AuthPage() {
                 </button>
               </div>
             </form>
-
             <p className="mt-6 text-center text-sm">
               {isSigningUp
                 ? "Already have an account?"
