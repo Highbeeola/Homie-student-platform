@@ -4,17 +4,20 @@
 
 import { useState } from "react";
 // import { supabase } from '@/lib/supabaseClient'; // 1. DELETE THIS LINE
-import { createClientComponentClient } from "@supabase/auth-helpers-nextjs"; // 2. ADD THIS NEW IMPORT
+import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
 import { Header } from "@/components/Header";
 import { useRouter } from "next/navigation";
 
-export default function AuthPage() {
+export default function AuthPage() {    
   const [isSigningUp, setIsSigningUp] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
-  const supabase = createClientComponentClient(); // 3. CREATE THE CLIENT HERE
+  const supabase = createBrowserClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+  );
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
