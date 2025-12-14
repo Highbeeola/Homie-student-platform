@@ -1,8 +1,11 @@
 // components/ListingCard.tsx
 import Image from "next/image";
+import Link from "next/link"; // Import the Link component
 
+// This type now reflects the actual data from your Supabase table
 type Listing = {
-  imageUrl: string;
+  id: string; // or number, depending on your DB
+  image_url: string;
   title: string;
   location: string;
   rooms: string;
@@ -11,19 +14,19 @@ type Listing = {
 
 type ListingCardProps = {
   listing: Listing;
-  onViewClick: () => void; // It expects a function to be passed here
 };
 
 function formatPrice(n: number) {
   return "₦" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "/yr";
 }
 
-export function ListingCard({ listing, onViewClick }: ListingCardProps) {
+export function ListingCard({ listing }: ListingCardProps) {
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
       <div className="relative">
+        {/* We use listing.image_url now, matching our database column */}
         <Image
-          src={listing.imageUrl}
+          src={listing.image_url}
           alt={listing.title}
           width={400}
           height={200}
@@ -45,13 +48,13 @@ export function ListingCard({ listing, onViewClick }: ListingCardProps) {
           </div>
         </div>
         <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
-          {/* THE IMPORTANT CHANGE IS HERE */}
-          <button
-            onClick={onViewClick} // We've wired up the button!
-            className="flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 font-bold text-[#041322]"
+          {/* THE IMPORTANT CHANGE IS HERE: The button is now a Link */}
+          <Link
+            href={`/listing/${listing.id}`} // This will go to a URL like /listing/123
+            className="flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 text-center font-bold text-[#041322]"
           >
             View
-          </button>
+          </Link>
           <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
             Contact
           </button>

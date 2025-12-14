@@ -1,10 +1,18 @@
-// src/components/Header.tsx
+// components/Header.tsx
 
 import Link from "next/link";
+import { createSupabaseServerClient } from "@/lib/supabaseServer"; // Import our server client
+import { UserNav } from "./UserNav"; // Import the new component
 
-// The word "export" right here is the most important part.
-// Make sure it exists in your file.
-export function Header() {
+// The Header is now an async Server Component!
+export async function Header() {
+  const supabase = await createSupabaseServerClient();
+
+  // Get the current user's session data
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
   return (
     <header className="flex items-center justify-between py-3">
       {/* Brand Logo and Name */}
@@ -20,20 +28,28 @@ export function Header() {
         </div>
       </Link>
 
-      {/* Navigation Links */}
-      <nav aria-label="main" className="flex items-center gap-2">
+      {/* Navigation Links - Now with conditional logic */}
+      <nav aria-label="main" className="flex items-center gap-4">
         <Link
           href="/add-listing"
           className="rounded-full px-3 py-1.5 font-semibold text-[#e6f9ff] transition-all hover:bg-white/10"
         >
           Add Listing
         </Link>
-        <Link
-          href="/auth" // <-- Changed this href
-          className="rounded-full bg-white/10 px-4 py-2 font-semibold text-[#e6f9ff] transition-all hover:bg-white/20"
-        >
-          Sign In / Sign Up
-        </Link>
+
+        {/* This is the magic: */}
+        {session ? (
+          // If a user session exists, show the UserNav component
+          <UserNav userEmail={session.user.email!} />
+        ) : (
+          // Otherwise, show the Sign In button
+          <Link
+            href="/auth"
+            className="rounded-full bg-white/10 px-4 py-2 font-semibold text-[#e6f9ff] transition-all hover:bg-white/20"
+          >
+            Sign In / Sign Up
+          </Link>
+        )}
       </nav>
     </header>
   );

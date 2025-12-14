@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
-import { Header } from "@/components/Header";
+import HeaderClient from "@/components/HeaderClient";
 import { useRouter } from "next/navigation";
 
 export default function AuthClient() {
@@ -58,7 +58,7 @@ export default function AuthClient() {
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4 pb-16">
-        <Header />
+        <HeaderClient />
         <div className="mx-auto mt-20 max-w-md">
           <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl">
             <h2 className="text-center text-2xl font-bold">
