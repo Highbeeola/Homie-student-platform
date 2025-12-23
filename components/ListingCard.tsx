@@ -1,24 +1,51 @@
 // components/ListingCard.tsx
+"use client"; // ADD THIS LINE
+
 import Image from "next/image";
-import Link from "next/link"; // Import the Link component
+import Link from "next/link";
 import type { Listing } from "@/types/listing";
+import { deleteListingAction } from "@/app/my-listings/actions"; // IMPORT THE ACTION
 
 type ListingCardProps = {
   listing: Listing;
+  showManagementControls?: boolean; // ADD THIS NEW PROP
 };
 
 function formatPrice(n: number) {
+  // Your existing formatPrice function is perfect
+  if (n === null || n === undefined) return "Price on request";
   return "₦" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "/yr";
 }
 
-export function ListingCard({ listing }: ListingCardProps) {
+export function ListingCard({
+  listing,
+  showManagementControls = false,
+}: ListingCardProps) {
   const href = `/listing/${listing.id}`;
-  const imgSrc = listing.image_url ?? "https://via.placeholder.com/400x200?text=No+Image";
+  const imgSrc =
+    listing.image_url ?? "https://via.placeholder.com/400x200?text=No+Image";
+
+  // ADD THE DELETE HANDLER FUNCTION
+  const handleDelete = async () => {
+    if (confirm("Are you sure you want to delete this listing?")) {
+      const result = await deleteListingAction(listing.id);
+      if (result?.error) {
+        alert(result.error);
+      }
+      // No 'else' needed, revalidatePath handles the refresh
+    }
+  };
+
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
-        <div className="relative">
-        {/* Use a fallback image if none provided */}
-        <Image src={imgSrc} alt={listing.title ?? "Listing image"} width={400} height={200} className="h-44 w-full object-cover" />
+      <div className="relative">
+        <Image
+          src={imgSrc}
+          alt={listing.title ?? "Listing image"}
+          width={400}
+          height={200}
+          className="h-44 w-full object-cover"
+        />
       </div>
       <div className="flex flex-1 flex-col p-4">
         <div className="flex justify-between">
@@ -31,24 +58,41 @@ export function ListingCard({ listing }: ListingCardProps) {
             </p>
           </div>
           <div className="font-extrabold text-[#FF7A66]">
-            {listing.price != null ? formatPrice(listing.price) : "Price on request"}
+            {listing.price != null
+              ? formatPrice(listing.price)
+              : "Price on request"}
           </div>
         </div>
-        <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
-          {href ? (
-            <Link
-              href={href}
-              className="flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 text-center font-bold text-[#041322]"
-            >
-              View
-            </Link>
-          ) : (
-            <div className="flex-1 rounded-lg bg-white/5 py-2 text-center font-bold text-white/40">No details</div>
-          )}
 
-          <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
-            Contact
-          </button>
+        {/* THIS IS THE MODIFIED PART */}
+        <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
+          {showManagementControls ? (
+            // If on "My Listings" page, show these buttons
+            <>
+              <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
+                Edit
+              </button>
+              <button
+                onClick={handleDelete}
+                className="flex-1 rounded-lg border border-red-500/40 bg-red-500/20 py-2 font-bold text-red-300 transition-colors hover:bg-red-500/40"
+              >
+                Delete
+              </button>
+            </>
+          ) : (
+            // Otherwise, show the original public buttons
+            <>
+              <Link
+                href={href}
+                className="flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 text-center font-bold text-[#041322]"
+              >
+                View
+              </Link>
+              <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
+                Contact
+              </button>
+            </>
+          )}
         </div>
       </div>
     </article>
