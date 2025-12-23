@@ -25,7 +25,36 @@ export default async function MyListingsPage() {
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching user's listings:", error);
+    // Supabase/PostgREST error objects may expose data on the prototype
+    // or via symbols/non-enumerable properties. Log a rich set of
+    // diagnostics so the cause is visible in the server logs.
+    try {
+      const details: Record<string, any> = {
+        typeof: typeof error,
+        isErrorInstance: error instanceof Error,
+        message: (error as any)?.message,
+        name: (error as any)?.name,
+        keys: Object.keys(error),
+        ownPropertyNames: Object.getOwnPropertyNames(error),
+        ownPropertySymbols: Object.getOwnPropertySymbols
+          ? Object.getOwnPropertySymbols(error).map((s) => s.toString())
+          : [],
+        descriptors: Object.getOwnPropertyDescriptors(error),
+        prototypeConstructor:
+          Object.getPrototypeOf(error)?.constructor?.name,
+      };
+
+      console.error("Error fetching user's listings (details):", details);
+      // Also print the raw object (may still appear as {} in some loggers)
+      console.error("Error fetching user's listings (raw):", error);
+    } catch (serializeErr) {
+      console.error(
+        "Error serializing Supabase error:",
+        serializeErr,
+        "original:",
+        error
+      );
+    }
   }
 
   const hasListings = listings && listings.length > 0;
