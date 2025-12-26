@@ -1,18 +1,18 @@
 // components/ListingCard.tsx
-"use client"; // ADD THIS LINE
+"use client"; // Make it a Client Component
 
 import Image from "next/image";
 import Link from "next/link";
 import type { Listing } from "@/types/listing";
-import { deleteListingAction } from "@/app/my-listings/actions"; // IMPORT THE ACTION
+import { deleteListingAction } from "@/app/my-listings/actions"; // Import the Server Action
 
 type ListingCardProps = {
   listing: Listing;
-  showManagementControls?: boolean; // ADD THIS NEW PROP
+  showManagementControls?: boolean;
 };
 
+// ... (your formatPrice function is perfect)
 function formatPrice(n: number) {
-  // Your existing formatPrice function is perfect
   if (n === null || n === undefined) return "Price on request";
   return "₦" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "/yr";
 }
@@ -25,14 +25,14 @@ export function ListingCard({
   const imgSrc =
     listing.image_url ?? "https://via.placeholder.com/400x200?text=No+Image";
 
-  // ADD THE DELETE HANDLER FUNCTION
+  // Create the handler function
   const handleDelete = async () => {
-    if (confirm("Are you sure you want to delete this listing?")) {
+    if (confirm("Are you sure you want to permanently delete this listing?")) {
       const result = await deleteListingAction(listing.id);
       if (result?.error) {
         alert(result.error);
       }
-      // No 'else' needed, revalidatePath handles the refresh
+      // No 'else' is needed. revalidatePath in the action handles the refresh.
     }
   };
 
@@ -48,6 +48,7 @@ export function ListingCard({
         />
       </div>
       <div className="flex flex-1 flex-col p-4">
+        {/* ... (top part with title/price is the same) ... */}
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-bold text-[#00d4ff]">
@@ -64,10 +65,8 @@ export function ListingCard({
           </div>
         </div>
 
-        {/* THIS IS THE MODIFIED PART */}
         <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
           {showManagementControls ? (
-            // If on "My Listings" page, show these buttons
             <>
               <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
                 Edit
@@ -80,7 +79,6 @@ export function ListingCard({
               </button>
             </>
           ) : (
-            // Otherwise, show the original public buttons
             <>
               <Link
                 href={href}

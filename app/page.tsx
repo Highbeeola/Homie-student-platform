@@ -18,7 +18,7 @@ export default async function HomePage() {
     const res = await supabase
       .from("listings")
       .select<"*", Listing>("*")
-      .order("id", { ascending: false });
+      .order("created_at", { ascending: false });
 
     listings = res.data || null;
 
@@ -45,13 +45,19 @@ export default async function HomePage() {
 
         <div className="mt-12 flex items-center justify-between">
           <h3 className="font-bold text-[#bcdff0]">Recommended homes</h3>
-          <div className="text-sm text-[#bcdff0]">{listings?.length || 0} listings</div>
+          <div className="text-sm text-[#bcdff0]">
+            {listings?.length || 0} listings
+          </div>
         </div>
 
         {fetchError && (
           <div className="mt-6 rounded-md bg-yellow-900/40 border border-yellow-500 p-4 text-yellow-100">
             <strong>Could not load listings.</strong>
-            <div className="text-sm mt-1">{typeof fetchError === 'string' ? fetchError : fetchError?.message ?? 'Check server logs for details.'}</div>
+            <div className="text-sm mt-1">
+              {typeof fetchError === "string"
+                ? fetchError
+                : fetchError?.message ?? "Check server logs for details."}
+            </div>
           </div>
         )}
 
@@ -59,8 +65,8 @@ export default async function HomePage() {
           <section className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
             {/* 3. The 'any' error is now gone because TypeScript knows what 'listing' is. */}
             {listings!.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
           </section>
         ) : (
           <div className="mt-6 rounded-lg border border-dashed border-white/20 bg-white/5 p-8 text-center text-[#bcdff0]">

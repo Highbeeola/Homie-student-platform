@@ -18,14 +18,14 @@ export async function deleteListingAction(listingId: number | string) {
     .from("listings")
     .delete()
     .eq("id", listingId)
-    .eq("user_id", user.id); // Security check
+    .eq("user_id", user.id); // This ensures you can only delete your own listings
 
   if (error) {
     console.error("Error deleting listing:", error);
-    return { error: "Failed to delete listing. Please try again." };
+    return { error: "Failed to delete listing." };
   }
 
-  // Refresh the data on the 'my-listings' page
+  // Automatically refresh the /my-listings page so the user sees the change
   revalidatePath("/my-listings");
   return { success: true };
 }

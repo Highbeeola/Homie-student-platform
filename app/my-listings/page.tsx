@@ -26,34 +26,40 @@ export default async function MyListingsPage() {
 
   if (error) {
     // Supabase/PostgREST error objects may expose data on the prototype
-    // or via symbols/non-enumerable properties. Log a rich set of
-    // diagnostics so the cause is visible in the server logs.
+    // or via symbols/non-enumerable properties. Build a safer serialized
+    // representation to ensure we capture the error details in server logs.
     try {
-      const details: Record<string, any> = {
-        typeof: typeof error,
-        isErrorInstance: error instanceof Error,
-        message: (error as any)?.message,
-        name: (error as any)?.name,
-        keys: Object.keys(error),
-        ownPropertyNames: Object.getOwnPropertyNames(error),
-        ownPropertySymbols: Object.getOwnPropertySymbols
-          ? Object.getOwnPropertySymbols(error).map((s) => s.toString())
-          : [],
-        descriptors: Object.getOwnPropertyDescriptors(error),
-        prototypeConstructor:
-          Object.getPrototypeOf(error)?.constructor?.name,
+      const serializeError = (err: any) => {
+        if (err == null) return err;
+        const out: Record<string, any> = {};
+        try {
+          const names = Object.getOwnPropertyNames(err || {});
+          for (const k of names) {
+            try {
+              out[k] = (err as any)[k];
+            } catch (e) {
+              out[k] = `<<unserializable:${String(e)}>>`;
+            }
+          }
+        } catch (e) {
+          out._serializeErrorFailure = String(e);
+        }
+        // include prototype constructor name if available
+        try {
+          out._proto = Object.getPrototypeOf(err)?.constructor?.name;
+        } catch (e) {
+          out._proto = `<<proto-read-failed:${String(e)}>>`;
+        }
+        return out;
       };
 
-      console.error("Error fetching user's listings (details):", details);
-      // Also print the raw object (may still appear as {} in some loggers)
-      console.error("Error fetching user's listings (raw):", error);
+      console.error("Error fetching user's listings (serialized):", serializeError(error));
+      // Also include some supabase query context if available
+      try {
+        console.error("Supabase error keys:", Object.getOwnPropertyNames(error));
+      } catch {}
     } catch (serializeErr) {
-      console.error(
-        "Error serializing Supabase error:",
-        serializeErr,
-        "original:",
-        error
-      );
+      console.error("Error serializing Supabase error:", serializeErr, "original:", error);
     }
   }
 
