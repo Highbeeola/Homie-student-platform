@@ -23,7 +23,7 @@ export function ListingCard({
 }: ListingCardProps) {
   const href = `/listing/${listing.id}`;
   const imgSrc =
-    listing.image_url ?? "https://via.placeholder.com/400x200?text=No+Image";
+    listing.image_url || "https://via.placeholder.com/400x200?text=No+Image";
 
   // Create the handler function
   const handleDelete = async () => {
