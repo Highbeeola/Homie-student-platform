@@ -27,6 +27,12 @@ const nextConfig: NextConfig = {
         port: "",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "tbeqitylwsfmvhvutons.supabase.co", // Paste your specific hostname here
+        port: "",
+        pathname: "/**",
+      },
     ],
   },
   // you can add other Next.js config options here if needed

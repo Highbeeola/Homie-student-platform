@@ -43,7 +43,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
       let finalImageUrl = listing?.image_url || "";
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
-        const filePath = `public/${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `private/${user.id}-${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from("listing-images")
           .upload(filePath, imageFile);

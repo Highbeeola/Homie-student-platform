@@ -1,17 +1,16 @@
 // components/ListingCard.tsx
-"use client"; // Make it a Client Component
+"use client";
 
 import Image from "next/image";
 import Link from "next/link";
 import type { Listing } from "@/types/listing";
-import { deleteListingAction } from "@/app/my-listings/actions"; // Import the Server Action
+import { deleteListingAction } from "@/app/my-listings/actions";
 
 type ListingCardProps = {
   listing: Listing;
   showManagementControls?: boolean;
 };
 
-// ... (your formatPrice function is perfect)
 function formatPrice(n: number) {
   if (n === null || n === undefined) return "Price on request";
   return "₦" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "/yr";
@@ -25,14 +24,12 @@ export function ListingCard({
   const imgSrc =
     listing.image_url || "https://via.placeholder.com/400x200?text=No+Image";
 
-  // Create the handler function
   const handleDelete = async () => {
     if (confirm("Are you sure you want to permanently delete this listing?")) {
       const result = await deleteListingAction(listing.id);
       if (result?.error) {
         alert(result.error);
       }
-      // No 'else' is needed. revalidatePath in the action handles the refresh.
     }
   };
 
@@ -48,7 +45,6 @@ export function ListingCard({
         />
       </div>
       <div className="flex flex-1 flex-col p-4">
-        {/* ... (top part with title/price is the same) ... */}
         <div className="flex justify-between">
           <div>
             <h3 className="text-lg font-bold text-[#00d4ff]">
@@ -61,16 +57,22 @@ export function ListingCard({
           <div className="font-extrabold text-[#FF7A66]">
             {listing.price != null
               ? formatPrice(listing.price)
-              : "Price on request"}
+              : // This was a small typo, should be listing.price, not formatPrice
+                "Price on request"}
           </div>
         </div>
 
         <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
           {showManagementControls ? (
             <>
-              <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
+              {/* THIS IS THE ONLY CHANGE: The <button> is now a <Link> */}
+              <Link
+                href={`/my-listings/${listing.id}/edit`}
+                className="flex-1 rounded-lg border border-white/10 py-2 text-center font-bold text-white transition-colors hover:bg-white/10"
+              >
                 Edit
-              </button>
+              </Link>
+
               <button
                 onClick={handleDelete}
                 className="flex-1 rounded-lg border border-red-500/40 bg-red-500/20 py-2 font-bold text-red-300 transition-colors hover:bg-red-500/40"
