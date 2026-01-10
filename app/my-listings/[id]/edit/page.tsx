@@ -1,6 +1,6 @@
 // app/my-listings/[id]/edit/page.tsx
 
-export const dynamic = "force-dynamic";
+export const dynamic = "force-dynamic"
 
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound, redirect } from "next/navigation";
