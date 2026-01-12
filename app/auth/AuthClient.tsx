@@ -24,20 +24,31 @@ export default function AuthClient() {
     setEmailRedirectTo(`${window.location.origin}/auth/callback`);
   }, []);
 
+  // Inside your AuthClient component...
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
 
     try {
       if (isSigningUp) {
+        // Sign Up
         const { error } = await supabase.auth.signUp({
           email,
           password,
           options: { emailRedirectTo: emailRedirectTo },
         });
         if (error) throw error;
+
         alert("Success! Please check your email to confirm your account.");
+
+        // --- THIS IS THE FIX ---
+        setEmail(""); // 1. Clear the email field
+        setPassword(""); // 2. Clear the password field
+        setIsSigningUp(false); // 3. Switch the form to "Sign In" mode
+        // --------------------
       } else {
+        // Sign In
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -50,7 +61,6 @@ export default function AuthClient() {
       setError(err.message);
     }
   };
-
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       {/* Note: If Header is a server component, this will cause an error. We may need a HeaderClient. */}
