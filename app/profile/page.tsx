@@ -59,44 +59,71 @@ export default function ProfilePage() {
     fetchInitialData();
   }, [router, supabase]);
 
+  // app/profile/page.tsx
+
   const handleSubmitVerification = async () => {
     if (!idCardFile || !profile) {
       alert("Please select an ID card image to upload.");
       return;
     }
     setIsSubmitting(true);
+    console.log("--- STARTING SUBMISSION ---");
+
     try {
+      console.log("STEP 1: Preparing file for upload...");
       const fileExt = idCardFile.name.split(".").pop();
-      const filePath = `${profile.id}/student_id.${fileExt}`;
+      const filePath = `id-cards/${profile.id}.${fileExt}`;
+      console.log(`File path will be: ${filePath}`);
+
+      console.log("STEP 2: Attempting to upload to Supabase Storage...");
       const { error: uploadError } = await supabase.storage
         .from("verification-documents")
         .upload(filePath, idCardFile, { upsert: true });
-      if (uploadError) throw uploadError;
+
+      if (uploadError) {
+        console.error("!!! STORAGE UPLOAD FAILED !!!");
+        throw uploadError; // Stop here if upload fails
+      }
+      console.log("STEP 3: Storage upload successful!");
+
+      console.log("STEP 4: Getting public URL for the uploaded file...");
       const {
         data: { publicUrl },
       } = supabase.storage
         .from("verification-documents")
         .getPublicUrl(filePath);
+      console.log(`Public URL is: ${publicUrl}`);
+
+      console.log('STEP 5: Attempting to update the "profiles" table...');
       const { error: updateError } = await supabase
         .from("profiles")
-        .update({ id_card_url: publicUrl, verification_status: "pending" })
+        .update({
+          id_card_url: publicUrl,
+          verification_status: "pending",
+        })
         .eq("id", profile.id);
-      if (updateError) throw updateError;
-      alert(
-        "Verification documents submitted successfully! Please wait for admin approval."
-      );
-      setProfile((prev) =>
-        prev
-          ? { ...prev, verification_status: "pending", id_card_url: publicUrl }
-          : null
-      );
+
+      if (updateError) {
+        console.error("!!! PROFILE TABLE UPDATE FAILED !!!");
+        throw updateError; // Stop here if update fails
+      }
+      console.log("STEP 6: Profile table update successful!");
+
+      alert("Verification documents submitted successfully!");
+      setProfile((prev: any) => ({
+        ...prev,
+        verification_status: "pending",
+        id_card_url: publicUrl,
+      }));
     } catch (err: any) {
+      console.error("--- !!! ERROR CAUGHT IN SUBMISSION !!! ---");
+      console.error("The specific error object is:", err);
       alert("Error submitting documents: " + err.message);
     } finally {
       setIsSubmitting(false);
+      console.log("--- SUBMISSION PROCESS FINISHED ---");
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-[#001428] text-center p-8">
