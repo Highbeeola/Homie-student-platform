@@ -5,16 +5,14 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Listing } from "@/types/listing";
 import { deleteListingAction } from "@/app/my-listings/actions";
+import { formatPrice } from "@/lib/utils"; // 1. We KEEP the import
 
 type ListingCardProps = {
   listing: Listing;
   showManagementControls?: boolean;
 };
 
-function formatPrice(n: number) {
-  if (n === null || n === undefined) return "Price on request";
-  return "₦" + n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",") + "/yr";
-}
+// 2. WE DELETE the old, duplicate formatPrice function from here.
 
 export function ListingCard({
   listing,
@@ -55,17 +53,14 @@ export function ListingCard({
             </p>
           </div>
           <div className="font-extrabold text-[#FF7A66]">
-            {listing.price != null
-              ? formatPrice(listing.price)
-              : // This was a small typo, should be listing.price, not formatPrice
-                "Price on request"}
+            {/* 3. This call now uses the imported function */}
+            {formatPrice(listing.price)}
           </div>
         </div>
 
         <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
           {showManagementControls ? (
             <>
-              {/* THIS IS THE ONLY CHANGE: The <button> is now a <Link> */}
               <Link
                 href={`/my-listings/${listing.id}/edit`}
                 className="flex-1 rounded-lg border border-white/10 py-2 text-center font-bold text-white transition-colors hover:bg-white/10"

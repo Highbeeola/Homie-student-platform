@@ -8,13 +8,16 @@ import type { Listing } from "@/types/listing";
 import { ImageUploader } from "@/components/ImageUploader";
 
 export function ListingForm({ listing }: { listing?: Listing }) {
+  // State for all fields
   const [title, setTitle] = useState(listing?.title || "");
   const [price, setPrice] = useState(listing?.price?.toString() || "");
   const [location, setLocation] = useState(listing?.location || "");
   const [rooms, setRooms] = useState(listing?.rooms || "1");
   const [description, setDescription] = useState(listing?.description || "");
+  const [videoUrl, setVideoUrl] = useState(listing?.video_url || ""); // State for video URL
   const [imageFile, setImageFile] = useState<File | null>(null);
 
+  // State for form handling
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -23,6 +26,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
+  // The complete and correct handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!listing && !imageFile) {
@@ -30,7 +34,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
       return;
     }
     if (!title || !price || !location || !description) {
-      setError("Please fill out all text fields.");
+      setError("Please fill out all required text fields.");
       return;
     }
     setLoading(true);
@@ -40,10 +44,11 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in.");
+
       let finalImageUrl = listing?.image_url || "";
       if (imageFile) {
         const fileExt = imageFile.name.split(".").pop();
-        const filePath = `private/${user.id}-${Date.now()}.${fileExt}`;
+        const filePath = `private/${user.id}-${Date.now()}.${fileExt}`; // Correct path
         const { error: uploadError } = await supabase.storage
           .from("listing-images")
           .upload(filePath, imageFile);
@@ -53,6 +58,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         } = supabase.storage.from("listing-images").getPublicUrl(filePath);
         finalImageUrl = publicUrl;
       }
+
       const listingData = {
         title,
         price: parseInt(price),
@@ -61,7 +67,9 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         description,
         image_url: finalImageUrl,
         user_id: user.id,
+        video_url: videoUrl,
       };
+
       let supabaseError;
       if (listing) {
         const { error } = await supabase
@@ -74,6 +82,12 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         supabaseError = error;
       }
       if (supabaseError) throw supabaseError;
+
+      alert(
+        listing
+          ? "Listing updated successfully!"
+          : "Listing submitted successfully!"
+      );
       router.push("/my-listings");
       router.refresh();
     } catch (err: any) {
@@ -89,12 +103,10 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         {listing ? "Edit Your Listing" : "Add a New Listing"}
       </h2>
       <p className="mt-2 text-sm text-[#bcdff0]">
-        {listing
-          ? "Update the details for your listing below."
-          : "Fill out the details below to help another student."}
+        {listing ? "Update the details..." : "Fill out the details..."}
       </p>
 
-      {/* THIS IS THE FULL, CORRECT FORM */}
+      {/* THIS IS THE FULL, CORRECT FORM JSX */}
       <form onSubmit={handleSubmit} className="mt-8 space-y-4">
         {/* Title */}
         <div>
@@ -197,12 +209,30 @@ export function ListingForm({ listing }: { listing?: Listing }) {
           </div>
         </div>
 
+        {/* Video URL */}
+        <div>
+          <label
+            htmlFor="videoUrl"
+            className="text-sm font-bold text-[#bcdff0]"
+          >
+            Video Tour URL (Optional)
+          </label>
+          <input
+            id="videoUrl"
+            type="url"
+            value={videoUrl}
+            onChange={(e) => setVideoUrl(e.target.value)}
+            className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
+            placeholder="e.g., https://www.youtube.com/watch?v=..."
+          />
+        </div>
+
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-lg bg-gradient-to-r from-[#00d_4ff] to-[#8A6CFF] py-3 font-bold text-[#041322] disabled:opacity-50 cursor-pointer"
+          className="w-full rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-3 font-bold text-[#041322] disabled:opacity-50 cursor-pointer"
         >
           {loading ? "Saving..." : listing ? "Save Changes" : "Submit Listing"}
         </button>

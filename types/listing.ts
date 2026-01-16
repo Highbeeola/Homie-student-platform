@@ -9,6 +9,7 @@ export type Listing = {
   description?: string;
   image_url?: string;
   user_id?: string;
+  video_url?: string;
 };
 
 export default Listing;
