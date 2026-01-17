@@ -10,6 +10,8 @@ export type Listing = {
   image_url?: string;
   user_id?: string;
   video_url?: string;
+  image_url_2?: string;
+  image_url_3?: string;
 };
 
 export default Listing;

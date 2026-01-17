@@ -19,9 +19,7 @@ export function ListingCard({
   showManagementControls = false,
 }: ListingCardProps) {
   const href = `/listing/${listing.id}`;
-  const imgSrc =
-    listing.image_url || "https://via.placeholder.com/400x200?text=No+Image";
-
+  const imgSrc = listing.image_url || "/placeholder.png"; // Use the local image
   const handleDelete = async () => {
     if (confirm("Are you sure you want to permanently delete this listing?")) {
       const result = await deleteListingAction(listing.id);

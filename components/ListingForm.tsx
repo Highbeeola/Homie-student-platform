@@ -8,56 +8,73 @@ import type { Listing } from "@/types/listing";
 import { ImageUploader } from "@/components/ImageUploader";
 
 export function ListingForm({ listing }: { listing?: Listing }) {
-  // State for all fields
   const [title, setTitle] = useState(listing?.title || "");
   const [price, setPrice] = useState(listing?.price?.toString() || "");
   const [location, setLocation] = useState(listing?.location || "");
   const [rooms, setRooms] = useState(listing?.rooms || "1");
   const [description, setDescription] = useState(listing?.description || "");
-  const [videoUrl, setVideoUrl] = useState(listing?.video_url || ""); // State for video URL
-  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [videoUrl, setVideoUrl] = useState(listing?.video_url || "");
 
-  // State for form handling
-  const [error, setError] = useState<string | null>(null);
+  // State for all three image files
+  const [imageFile1, setImageFile1] = useState<File | null>(null);
+  const [imageFile2, setImageFile2] = useState<File | null>(null);
+  const [imageFile3, setImageFile3] = useState<File | null>(null);
+
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const router = useRouter();
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  // The complete and correct handleSubmit function
+  // Helper function for uploading a single file
+  const uploadImage = async (file: File, user_id: string): Promise<string> => {
+    const fileExt = file.name.split(".").pop();
+    const filePath = `private/${user_id}-${Date.now()}-${Math.random()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from("listing-images")
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const {
+      data: { publicUrl },
+    } = supabase.storage.from("listing-images").getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!listing && !imageFile) {
-      setError("Please select an image to upload.");
+    if (!listing && !imageFile1) {
+      setError("Please select the main image.");
       return;
     }
     if (!title || !price || !location || !description) {
-      setError("Please fill out all required text fields.");
+      setError("Please fill out all text fields.");
       return;
     }
+
     setLoading(true);
     setError(null);
+
     try {
       const {
         data: { user },
       } = await supabase.auth.getUser();
       if (!user) throw new Error("You must be logged in.");
 
-      let finalImageUrl = listing?.image_url || "";
-      if (imageFile) {
-        const fileExt = imageFile.name.split(".").pop();
-        const filePath = `private/${user.id}-${Date.now()}.${fileExt}`; // Correct path
-        const { error: uploadError } = await supabase.storage
-          .from("listing-images")
-          .upload(filePath, imageFile);
-        if (uploadError) throw uploadError;
-        const {
-          data: { publicUrl },
-        } = supabase.storage.from("listing-images").getPublicUrl(filePath);
-        finalImageUrl = publicUrl;
-      }
+      // Start with existing URLs if in edit mode
+      let imageUrl1 = listing?.image_url || "";
+      let imageUrl2 = listing?.image_url_2 || "";
+      let imageUrl3 = listing?.image_url_3 || "";
+
+      // Upload new files if they were selected
+      if (imageFile1) imageUrl1 = await uploadImage(imageFile1, user.id);
+      if (imageFile2) imageUrl2 = await uploadImage(imageFile2, user.id);
+      if (imageFile3) imageUrl3 = await uploadImage(imageFile3, user.id);
 
       const listingData = {
         title,
@@ -65,29 +82,24 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         location,
         rooms,
         description,
-        image_url: finalImageUrl,
         user_id: user.id,
         video_url: videoUrl,
+        image_url: imageUrl1,
+        image_url_2: imageUrl2,
+        image_url_3: imageUrl3,
       };
 
-      let supabaseError;
       if (listing) {
         const { error } = await supabase
           .from("listings")
           .update(listingData)
           .eq("id", listing.id);
-        supabaseError = error;
+        if (error) throw error;
       } else {
         const { error } = await supabase.from("listings").insert(listingData);
-        supabaseError = error;
+        if (error) throw error;
       }
-      if (supabaseError) throw supabaseError;
 
-      alert(
-        listing
-          ? "Listing updated successfully!"
-          : "Listing submitted successfully!"
-      );
       router.push("/my-listings");
       router.refresh();
     } catch (err: any) {
@@ -103,11 +115,13 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         {listing ? "Edit Your Listing" : "Add a New Listing"}
       </h2>
       <p className="mt-2 text-sm text-[#bcdff0]">
-        {listing ? "Update the details..." : "Fill out the details..."}
+        {listing
+          ? "Update the details for your listing below."
+          : "Fill out the details below to help another student."}
       </p>
 
-      {/* THIS IS THE FULL, CORRECT FORM JSX */}
-      <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+      {/* THIS IS THE FULL, CORRECTLY STYLED FORM */}
+      <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         {/* Title */}
         <div>
           <label htmlFor="title" className="text-sm font-bold text-[#bcdff0]">
@@ -125,7 +139,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
         </div>
 
         {/* Price & Location */}
-        <div className="flex gap-4">
+        <div className="flex flex-col gap-6 sm:flex-row">
           <div className="flex-1">
             <label htmlFor="price" className="text-sm font-bold text-[#bcdff0]">
               Price (₦)
@@ -192,20 +206,46 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             onChange={(e) => setDescription(e.target.value)}
             required
             className="mt-2 w-full min-h-[100px] rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
-            placeholder="Describe the amenities..."
+            placeholder="Describe the amenities, water/light situation, etc."
           ></textarea>
         </div>
 
-        {/* Image Uploader */}
+        {/* Main Image Uploader */}
         <div>
           <label className="text-sm font-bold text-[#bcdff0]">
-            Listing Image
+            Main Image (Required)
           </label>
           <div className="mt-2">
             <ImageUploader
               initialImageUrl={listing?.image_url}
-              onFileSelect={(file) => setImageFile(file)}
+              onFileSelect={(file) => setImageFile1(file)}
             />
+          </div>
+        </div>
+
+        {/* Additional Image Uploaders */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-bold text-[#bcdff0]">
+              Additional Image 2
+            </label>
+            <div className="mt-2">
+              <ImageUploader
+                initialImageUrl={listing?.image_url_2}
+                onFileSelect={(file) => setImageFile2(file)}
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-bold text-[#bcdff0]">
+              Additional Image 3
+            </label>
+            <div className="mt-2">
+              <ImageUploader
+                initialImageUrl={listing?.image_url_3}
+                onFileSelect={(file) => setImageFile3(file)}
+              />
+            </div>
           </div>
         </div>
 
@@ -223,12 +263,13 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
             className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
-            placeholder="e.g., https://www.youtube.com/watch?v=..."
+            placeholder="e.g., https://youtube.com/watch?v=..."
           />
         </div>
 
         {error && <p className="text-center text-sm text-red-400">{error}</p>}
 
+        {/* The Submit Button */}
         <button
           type="submit"
           disabled={loading}

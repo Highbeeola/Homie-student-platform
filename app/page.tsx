@@ -9,7 +9,6 @@ import type { Listing } from "@/types/listing";
 export default async function HomePage() {
   // 2. AWAIT THE CLIENT: We add the 'await' keyword here.
   const supabase = await createSupabaseServerClient();
-
   // Fetch listings with safer handling so server logs don't trigger Next overlay
   let listings: Listing[] | null = null;
   let fetchError: any = null;

@@ -1,35 +1,34 @@
 // lib/supabaseServer.ts
-import { createServerClient, type CookieOptions } from "@supabase/ssr";
-import { cookies } from "next/headers";
+import { createServerClient, type CookieOptions } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
+// Make the function itself async
 export async function createSupabaseServerClient() {
-  const cookieStore = await cookies();
+  const cookieStore = await cookies(); // We MUST await this
 
-  // USE THE SERVER-ONLY (NON-PUBLIC) VARIABLES
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error(
-      "Server environment variables SUPABASE_URL or SUPABASE_ANON_KEY are not set."
-    );
-  }
-
-  return createServerClient(supabaseUrl, supabaseAnonKey, {
-    cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+  return createServerClient(
+    process.env.SUPABASE_URL!,
+    process.env.SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return cookieStore.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value, ...options });
+          } catch (error) {
+            // This is expected in Server Components
+          }
+        },
+        remove(name: string, options: CookieOptions) {
+          try {
+            cookieStore.set({ name, value: '', ...options });
+          } catch (error) {
+            // This is expected in Server Components
+          }
+        },
       },
-      set(name: string, value: string, options?: CookieOptions) {
-        try {
-          cookieStore.set({ name, value, ...(options as any) });
-        } catch (e) {}
-      },
-      remove(name: string, _options?: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: "", ...(_options as any) });
-        } catch (e) {}
-      },
-    },
-  });
+    }
+  );
 }
