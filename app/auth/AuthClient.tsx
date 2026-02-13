@@ -2,77 +2,129 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { createBrowserClient } from "@supabase/ssr"; // <-- 1. THE NEW, CORRECT IMPORT
-import { Header } from "@/components/Header"; // Assuming your Header is a Server Component, this might need adjustment later
+import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
+import HeaderClient from "@/components/HeaderClient";
+import type { Session } from "@supabase/supabase-js";
 
 export default function AuthClient() {
+  const [session, setSession] = useState<Session | null>(null);
   const [isSigningUp, setIsSigningUp] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [emailRedirectTo, setEmailRedirectTo] = useState("");
   const router = useRouter();
 
-  // 2. THE NEW, CORRECT WAY TO CREATE THE CLIENT
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   useEffect(() => {
-    setEmailRedirectTo(`${window.location.origin}/auth/callback`);
-  }, []);
-
-  // Inside your AuthClient component...
+    const checkSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      setSession(session);
+      if (session) {
+        router.push("/");
+      }
+    };
+    checkSession();
+  }, [router, supabase]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
-
-    try {
-      if (isSigningUp) {
-        // Sign Up
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: { emailRedirectTo: emailRedirectTo },
-        });
-        if (error) throw error;
-
-        alert("Success! Please check your email to confirm your account.");
-
-        // --- THIS IS THE FIX ---
-        setEmail(""); // 1. Clear the email field
-        setPassword(""); // 2. Clear the password field
-        setIsSigningUp(false); // 3. Switch the form to "Sign In" mode
-        // --------------------
-      } else {
-        // Sign In
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
-        router.push("/");
-        router.refresh();
+    if (isSigningUp) {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+      });
+      if (error) {
+        setError(error.message);
+        return;
       }
-    } catch (err: any) {
-      setError(err.message);
+      if (
+        data.user &&
+        data.user.identities &&
+        data.user.identities.length === 0
+      ) {
+        setError("This email may already be in use. Please sign in.");
+      } else {
+        alert("Success! Please check your email to confirm your account.");
+        setEmail("");
+        setPassword("");
+        setIsSigningUp(false);
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+      if (error) {
+        setError(error.message);
+        return;
+      }
+      router.push("/");
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: { redirectTo: `${location.origin}/auth/callback` },
+    });
+  };
+
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
-      {/* Note: If Header is a server component, this will cause an error. We may need a HeaderClient. */}
-      {/* For now, let's see if it works. */}
-      {/* <Header />  <-- Temporarily comment this out if it causes issues */}
-      <div className="mx-auto mt-20 max-w-md">
+      <div className="mx-auto max-w-6xl px-4">
+        <HeaderClient session={session} />
+      </div>
+      <div className="mx-auto mt-20 max-w-md px-4 pb-16">
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl">
           <h2 className="text-center text-2xl font-bold">
             {isSigningUp ? "Create Your Account" : "Sign In to Homie"}
           </h2>
-          <form onSubmit={handleAuth} className="mt-8 space-y-6">
-            {/* ... your form JSX is perfect, no changes needed ... */}
+
+          {/* GOOGLE BUTTON - FULL STYLING */}
+          <button
+            onClick={handleGoogleSignIn}
+            className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 py-3 font-semibold text-white transition-colors hover:bg-white/20"
+          >
+            <svg className="h-5 w-5" viewBox="0 0 48 48">
+              <path
+                fill="#FFC107"
+                d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+              ></path>
+              <path
+                fill="#FF3D00"
+                d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"
+              ></path>
+              <path
+                fill="#4CAF50"
+                d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"
+              ></path>
+              <path
+                fill="#1976D2"
+                d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.574l6.19,5.238C42.022,35.244,44,30.038,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+              ></path>
+            </svg>
+            <span>
+              {isSigningUp ? "Sign Up with Google" : "Sign In with Google"}
+            </span>
+          </button>
+
+          <div className="my-6 flex items-center gap-4">
+            <hr className="w-full border-t border-white/20" />
+            <span className="text-sm text-gray-400">OR</span>
+            <hr className="w-full border-t border-white/20" />
+          </div>
+
+          {/* EMAIL/PASSWORD FORM - FULL STYLING */}
+          <form onSubmit={handleAuth} className="space-y-6">
             <div>
               <label
                 htmlFor="email"
@@ -87,7 +139,7 @@ export default function AuthClient() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="mt-2 w-full rounded-lg border-none bg-white/5 px-4 py-3 text-white outline-none"
+                className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-3 text-white outline-none"
               />
             </div>
             <div>
@@ -104,7 +156,7 @@ export default function AuthClient() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="mt-2 w-full rounded-lg border-none bg-white/5 px-4 py-3 text-white outline-none"
+                className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-3 text-white outline-none"
               />
             </div>
             {error && (
@@ -119,6 +171,8 @@ export default function AuthClient() {
               </button>
             </div>
           </form>
+
+          {/* TOGGLE - FULL STYLING */}
           <p className="mt-6 text-center text-sm">
             {isSigningUp
               ? "Already have an account?"

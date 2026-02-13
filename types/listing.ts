@@ -12,6 +12,10 @@ export type Listing = {
   video_url?: string;
   image_url_2?: string;
   image_url_3?: string;
+  contact_phone?: string | null;
+  capacity?: number;
+  occupants_gender?: string | null;
+  spots_filled?: number;
 };
 
 export default Listing;

@@ -1,10 +1,9 @@
 // components/ImageUploader.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useId } from "react"; // 1. Import useId
 
 type ImageUploaderProps = {
-  // It now passes the raw file object back to the parent
   onFileSelect: (file: File | null) => void;
   initialImageUrl?: string | null;
 };
@@ -14,24 +13,20 @@ export function ImageUploader({
   initialImageUrl,
 }: ImageUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
-    initialImageUrl || null
+    initialImageUrl || null,
   );
+  const id = useId(); // 2. Generate a unique ID for this component instance
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
       const file = event.target.files[0];
-
-      // Show a preview
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewUrl(reader.result as string);
       };
       reader.readAsDataURL(file);
-
-      // Pass the selected file back to the parent form
       onFileSelect(file);
     } else {
-      // If the user cancels the file selection
       onFileSelect(null);
     }
   };
@@ -50,8 +45,9 @@ export function ImageUploader({
         </div>
       )}
       <div className="mt-4">
+        {/* 3. Use the unique ID in the htmlFor and id attributes */}
         <label
-          htmlFor="image-upload"
+          htmlFor={id}
           className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/20"
         >
           Choose Image
@@ -59,7 +55,7 @@ export function ImageUploader({
         <input
           style={{ visibility: "hidden", position: "absolute" }}
           type="file"
-          id="image-upload"
+          id={id}
           accept="image/*"
           onChange={handleFileChange}
         />

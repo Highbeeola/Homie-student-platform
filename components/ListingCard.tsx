@@ -5,21 +5,23 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Listing } from "@/types/listing";
 import { deleteListingAction } from "@/app/my-listings/actions";
-import { formatPrice } from "@/lib/utils"; // 1. We KEEP the import
+import { formatPrice } from "@/lib/utils";
 
 type ListingCardProps = {
   listing: Listing;
   showManagementControls?: boolean;
 };
 
-// 2. WE DELETE the old, duplicate formatPrice function from here.
-
 export function ListingCard({
   listing,
   showManagementControls = false,
 }: ListingCardProps) {
   const href = `/listing/${listing.id}`;
-  const imgSrc = listing.image_url || "/placeholder.png"; // Use the local image
+  const imgSrc = listing.image_url || "/placeholder.png";
+
+  const spotsLeft = (listing.capacity || 1) - (listing.spots_filled || 0);
+  const isAvailable = spotsLeft > 0;
+
   const handleDelete = async () => {
     if (confirm("Are you sure you want to permanently delete this listing?")) {
       const result = await deleteListingAction(listing.id);
@@ -30,8 +32,21 @@ export function ListingCard({
   };
 
   return (
-    <article className="group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl">
+    <article
+      className={`group flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/5 shadow-lg transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl ${
+        !isAvailable ? "opacity-60" : ""
+      }`}
+    >
       <div className="relative">
+        {/* Partially booked badge */}
+        {listing.spots_filled > 0 && isAvailable && (
+          <div className="absolute top-3 left-3 z-10 rounded-full bg-blue-500 px-3 py-1 text-xs font-bold text-white">
+            {`1 ${
+              listing.occupants_gender === "male" ? "👨 Male" : "👩 Female"
+            } occupant`}
+          </div>
+        )}
+
         <Image
           src={imgSrc}
           alt={listing.title ?? "Listing image"}
@@ -40,6 +55,7 @@ export function ListingCard({
           className="h-44 w-full object-cover"
         />
       </div>
+
       <div className="flex flex-1 flex-col p-4">
         <div className="flex justify-between">
           <div>
@@ -50,11 +66,18 @@ export function ListingCard({
               {listing.location} • {listing.rooms} rooms
             </p>
           </div>
+
           <div className="font-extrabold text-[#FF7A66]">
-            {/* 3. This call now uses the imported function */}
-            {formatPrice(listing.price)}
+            {isAvailable ? formatPrice(listing.price) : "Fully Booked"}
           </div>
         </div>
+
+        {/* Spots left indicator */}
+        {listing.capacity > 1 && (
+          <p className="mt-2 text-sm font-bold text-green-400">
+            {spotsLeft} of {listing.capacity} spots left
+          </p>
+        )}
 
         <div className="mt-4 flex gap-2 border-t border-white/10 pt-4">
           {showManagementControls ? (
@@ -77,10 +100,13 @@ export function ListingCard({
             <>
               <Link
                 href={href}
-                className="flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 text-center font-bold text-[#041322]"
+                className={`flex-1 rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-2 text-center font-bold text-[#041322] ${
+                  !isAvailable ? "pointer-events-none bg-gray-500" : ""
+                }`}
               >
                 View
               </Link>
+
               <button className="flex-1 rounded-lg border border-white/10 py-2 font-bold text-white transition-colors hover:bg-white/10">
                 Contact
               </button>

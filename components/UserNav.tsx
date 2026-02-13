@@ -1,17 +1,18 @@
 // components/UserNav.tsx
 "use client";
 
-// Note: You might need to change this import if you've fully upgraded
-import { createBrowserClient } from "@supabase/auth-helpers-nextjs";
-
+import { createBrowserClient } from "@supabase/ssr"; // <-- THE FIX: Import from the new library
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { UserCircle } from "lucide-react";
 
 export function UserNav({ userEmail }: { userEmail: string }) {
   const router = useRouter();
+
+  // Create the client using the new, correct function
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
   const handleSignOut = async () => {
@@ -21,27 +22,21 @@ export function UserNav({ userEmail }: { userEmail: string }) {
   };
 
   return (
+    // We'll use a wrapper to group the items
     <div className="flex items-center gap-4">
-      {/* 1. User's Email */}
-      <span className="text-sm text-gray-300 hidden sm:block">{userEmail}</span>
-
-      {/* 2. "My Listings" Link */}
+      {/* We can remove the email and just have the links */}
       <Link
         href="/my-listings"
-        className="rounded-full px-3 py-1.5 text-sm font-semibold text-[#e6f9ff] transition-all hover:bg-white/10"
+        className="text-base font-semibold tracking-wide text-white/90 hover:text-white transition-colors"
       >
         My Listings
       </Link>
 
-      {/* 3. "Profile" Link */}
-      <Link
-        href="/profile"
-        className="rounded-full px-3 py-1.5 text-sm font-semibold text-[#e6f9ff] transition-all hover:bg-white/10"
-      >
-        Profile
+      {/* Let's make the Profile link an icon for a cleaner look */}
+      <Link href="/profile" className="text-gray-300 hover:text-white">
+        <UserCircle size={24} />
       </Link>
 
-      {/* 4. "Sign Out" Button */}
       <button
         onClick={handleSignOut}
         className="rounded-full bg-red-500/20 px-4 py-2 text-sm font-semibold text-red-300 transition-colors hover:bg-red-500/40"

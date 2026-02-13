@@ -1,51 +1,76 @@
 // components/Hero.tsx
+"use client";
 
-import Image from 'next/image'; // We use the special Image component from Next.js for performance
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { Search } from "lucide-react";
 
 export function Hero() {
-    return (
-        <section className="mt-8 flex flex-col gap-4 rounded-2xl border border-white/10 bg-gradient-to-t from-white/5 to-transparent p-6 shadow-2xl lg:flex-row lg:items-center">
+  const [searchQuery, setSearchQuery] = useState("");
+  const router = useRouter();
 
-            {/* Left side: Title and Search */}
-            <div className="flex-1">
-                <h2 className="text-3xl font-bold text-white">
-                    Find your trusted student home
-                </h2>
-                <p className="mt-2 text-[#bcdff0]">
-                    Listings posted by graduating students — real photos, video tours, direct contact.
-                </p>
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push("/browse");
+    }
+  };
 
-                <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-                    <div className="flex flex-1 items-center rounded-full border border-white/10 bg-white/5 p-1">
-                        <input
-                            placeholder="Search by area, title, etc..."
-                            className="flex-1 bg-transparent px-4 py-2 text-white placeholder-gray-400 outline-none"
-                        />
-                        <button className="rounded-full bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] px-4 py-2 font-bold text-[#041322] shadow-lg">
-                            Search
-                        </button>
-                    </div>
-                </div>
-            </div>
+  return (
+    <section className="text-center py-16 lg:py-24 rounded-2xl bg-gradient-to-tr from-blue-900/40 via-transparent to-transparent">
+      <h1 className="text-3xl sm:text-4xl lg:text-6xl font-extrabold text-white tracking-tight">
+        Student Housing, <br />
+        Made <span className="text-[#00d4ff]">Simple & Safe</span>
+      </h1>
 
-            {/* Right side: Featured Card */}
-            <aside className="w-full rounded-xl border border-white/10 bg-gradient-to-t from-white/5 to-transparent shadow-xl lg:w-72">
-                <Image
-                    src="https://images.unsplash.com/photo-1560448204-e02f11c3d0e2"
-                    alt="Featured property"
-                    width={280}
-                    height={160}
-                    className="h-40 w-full rounded-t-xl object-cover"
-                />
-                <div className="p-3">
-                    <h4 className="font-bold">Cozy 2BR near campus</h4>
-                    <p className="mt-1 text-sm text-[#bcdff0]">5 min walk • generator & water</p>
-                    <span className="mt-2 inline-block rounded-full bg-gradient-to-r from-[#FF7A66] to-[#00d4ff] px-3 py-1 text-xs font-bold text-[#041322]">
-                        Verified
-                    </span>
-                </div>
-            </aside>
+      <p className="mt-4 text-base sm:text-lg lg:text-xl text-blue-200 max-w-2xl mx-auto">
+        Nigeria's peer-to-peer marketplace for student accommodation. Connect
+        directly with students and skip the agent chaos.
+      </p>
 
-        </section>
-    );
+      <form
+        onSubmit={handleSearch}
+        className="mt-8 mx-auto max-w-xl w-full flex items-center p-2 rounded-full bg-white/5 border border-white/20 backdrop-blur-sm"
+      >
+        <div className="flex-shrink-0 pl-4">
+          <Search className="w-5 h-5 sm:w-6 sm:h-6 text-blue-300" />
+        </div>
+
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="Search for a location or campus..."
+          aria-label="Search listings"
+          className="w-full bg-transparent text-white placeholder-blue-300 text-sm sm:text-base lg:text-lg px-4 py-2 outline-none border-none"
+        />
+
+        <button
+          type="submit"
+          disabled={!searchQuery.trim()}
+          className={`rounded-full px-6 sm:px-8 py-2 sm:py-3 font-bold text-sm sm:text-base transition-all duration-200
+          ${
+            searchQuery.trim()
+              ? "bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] text-[#041322] hover:scale-105"
+              : "bg-gray-600 text-gray-300 cursor-not-allowed"
+          }`}
+        >
+          Find a Home
+        </button>
+      </form>
+
+      <p className="mt-6 text-blue-200 text-sm sm:text-base">
+        Leaving your space?{" "}
+        <Link
+          href="/add-listing"
+          className="font-semibold text-white hover:underline"
+        >
+          List it for free
+        </Link>
+      </p>
+    </section>
+  );
 }

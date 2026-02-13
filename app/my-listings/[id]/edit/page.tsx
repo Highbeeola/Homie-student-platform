@@ -1,55 +1,54 @@
-// app/listing/[id]/page.tsx
-
-// This line is VERY important. It forces the page to be dynamic and not cached.
+// app/my-listings/[id]/edit/page.tsx
 export const dynamic = "force-dynamic";
-
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
+import { ListingForm } from "@/components/ListingForm";
+import { Header } from "@/components/Header";
+import type { Listing } from "@/types/listing";
 
-export default async function ListingDetailPage({
+// We use the Promise<...> signature here
+export default async function Page({
   params,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
 }) {
-  // --- START OF DEBUGGING ---
-  console.log("--- DEBUGGING LISTING DETAIL PAGE ---");
-  console.log("Page was called with params:", params);
-
-  if (!params || !params.id) {
-    console.error("CRITICAL ERROR: params.id is missing or undefined.");
-    return notFound();
+  const supabase = await createSupabaseServerClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect("/auth");
   }
 
-  console.log(`Attempting to fetch listing with ID: ${params.id}`);
-  // --- END OF DEBUGGING ---
-
-  const supabase = await createSupabaseServerClient();
+  // THE PROVEN FIX: We await the params promise
+  const resolvedParams = await params;
+  const id = Array.isArray(resolvedParams.id)
+    ? resolvedParams.id[0]
+    : resolvedParams.id;
+  if (!id) {
+    return notFound();
+  }
 
   const { data: listing, error } = await supabase
     .from("listings")
-    .select("*")
-    .eq("id", params.id)
+    .select<"*", Listing>("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
     .single();
 
-  if (error) {
-    console.error("Supabase query returned an error:", error);
+  if (error || !listing) {
+    console.error(`Could not fetch listing to edit with id ${id}:`, error);
+    notFound();
   }
 
-  if (!listing) {
-    console.log("Query was successful, but no listing was found with that ID.");
-    return notFound();
-  }
-
-  console.log("SUCCESS: Listing found!", listing);
-
-  // We will just return a simple success message for now.
-  // This removes all other variables (Header, Image, formatPrice) from the equation.
   return (
-    <div>
-      <h1>Listing Found!</h1>
-      <p>ID: {listing.id}</p>
-      <p>Title: {listing.title}</p>
-      <pre>{JSON.stringify(listing, null, 2)}</pre>
+    <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
+      <div className="mx-auto max-w-6xl px-4 pb-16">
+        <Header />
+        <div className="mx-auto mt-12 max-w-2xl">
+          <ListingForm listing={listing} />
+        </div>
+      </div>
     </div>
   );
 }
