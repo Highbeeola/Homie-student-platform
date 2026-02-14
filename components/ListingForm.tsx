@@ -1,18 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserClient } from "@supabase/ssr";
 import type { Listing } from "@/types/listing";
 import { ImageUploader } from "@/components/ImageUploader";
 import { VideoUploader } from "@/components/VideoUploader";
+import { saveListingAction } from "@/app/actions/listings";
 
 export function ListingForm({ listing }: { listing?: Listing }) {
   const [title, setTitle] = useState(listing?.title || "");
   const [price, setPrice] = useState(listing?.price?.toString() || "");
   const [location, setLocation] = useState(listing?.location || "");
   const [rooms, setRooms] = useState(listing?.rooms || "1");
-  // 1. ADD STATE FOR CAPACITY
   const [capacity, setCapacity] = useState(
     listing?.capacity?.toString() || "1",
   );
@@ -22,12 +22,15 @@ export function ListingForm({ listing }: { listing?: Listing }) {
     listing?.contact_phone || "",
   );
 
+  const spotsFilled = listing?.spots_filled || 0;
+  const occupantsGender = listing?.occupants_gender || "any";
+
   const [imageFile1, setImageFile1] = useState<File | null>(null);
   const [imageFile2, setImageFile2] = useState<File | null>(null);
   const [imageFile3, setImageFile3] = useState<File | null>(null);
 
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
   const router = useRouter();
 
   const supabase = createBrowserClient(
@@ -37,7 +40,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
 
   const uploadImage = async (file: File, user_id: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
-    const filePath = `private/${user_id}-${Date.now()}-${Math.random()}.${fileExt}`;
+    const filePath = `listings/${user_id}-${Date.now()}-${Math.random()}.${fileExt}`;
     const { error: uploadError } = await supabase.storage
       .from("listing-images")
       .upload(filePath, file);
@@ -48,68 +51,91 @@ export function ListingForm({ listing }: { listing?: Listing }) {
     return publicUrl;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    console.log("1. Submit button clicked"); // Debug Step 1
+    setError(null);
+
     if (!listing && !imageFile1) {
+      console.log("Validation failed: No main image");
       setError("Please select the main image.");
       return;
     }
-    if (!title || !price || !location || !description || !contactPhone) {
-      setError("Please fill out all required fields.");
+
+    if (listing && parseInt(capacity) < spotsFilled) {
+      console.log("Validation failed: Capacity lower than occupancy");
+      setError(
+        `Cannot set capacity lower than current occupants (${spotsFilled}).`,
+      );
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    startTransition(async () => {
+      try {
+        console.log("2. Checking Auth...");
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
 
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("You must be logged in.");
+        if (!user) {
+          console.error("User not logged in");
+          throw new Error("You must be logged in.");
+        }
+        console.log("3. User found:", user.id);
 
-      let imageUrl1 = listing?.image_url || "";
-      let imageUrl2 = listing?.image_url_2 || "";
-      let imageUrl3 = listing?.image_url_3 || "";
+        console.log("4. Starting Image Uploads...");
+        let imageUrl1 = listing?.image_url || "";
+        let imageUrl2 = listing?.image_url_2 || "";
+        let imageUrl3 = listing?.image_url_3 || "";
 
-      if (imageFile1) imageUrl1 = await uploadImage(imageFile1, user.id);
-      if (imageFile2) imageUrl2 = await uploadImage(imageFile2, user.id);
-      if (imageFile3) imageUrl3 = await uploadImage(imageFile3, user.id);
+        if (imageFile1) {
+          console.log("Uploading Image 1...");
+          imageUrl1 = await uploadImage(imageFile1, user.id);
+          console.log("Image 1 Uploaded:", imageUrl1);
+        }
+        if (imageFile2) {
+          console.log("Uploading Image 2...");
+          imageUrl2 = await uploadImage(imageFile2, user.id);
+          console.log("Image 2 Uploaded:", imageUrl2);
+        }
+        if (imageFile3) {
+          console.log("Uploading Image 3...");
+          imageUrl3 = await uploadImage(imageFile3, user.id);
+          console.log("Image 3 Uploaded:", imageUrl3);
+        }
 
-      // 2. ADD CAPACITY TO THE DATA OBJECT
-      const listingData = {
-        title,
-        price: parseInt(price),
-        location,
-        rooms,
-        capacity: parseInt(capacity), // Save capacity as an integer
-        description,
-        user_id: user.id,
-        video_url: videoUrl,
-        image_url: imageUrl1,
-        image_url_2: imageUrl2,
-        image_url_3: imageUrl3,
-        contact_phone: contactPhone,
-      };
+        const listingData = {
+          title,
+          price: parseInt(price),
+          location,
+          rooms,
+          capacity: parseInt(capacity),
+          description,
+          video_url: videoUrl,
+          image_url: imageUrl1,
+          image_url_2: imageUrl2,
+          image_url_3: imageUrl3,
+          contact_phone: contactPhone,
+          user_id: user.id,
+        };
 
-      if (listing) {
-        const { error } = await supabase
-          .from("listings")
-          .update(listingData)
-          .eq("id", listing.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("listings").insert(listingData);
-        if (error) throw error;
+        console.log("5. Calling Server Action with data:", listingData);
+        const result = await saveListingAction(listingData as any, listing?.id);
+        console.log("6. Server Action Result:", result);
+
+        if (result?.error) {
+          console.error("Server Action returned error:", result.error);
+          setError(result.error);
+        } else {
+          console.log("Success! Redirecting...");
+          router.push("/my-listings");
+          router.refresh();
+        }
+      } catch (err: any) {
+        console.error("ERROR CAUGHT IN FORM:", err); // Final Safety Catch
+        setError(err.message);
       }
-
-      router.push("/my-listings");
-      router.refresh();
-    } catch (err: any) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
+    });
   };
 
   return (
@@ -117,29 +143,26 @@ export function ListingForm({ listing }: { listing?: Listing }) {
       <h2 className="text-2xl font-bold">
         {listing ? "Edit Your Listing" : "Add a New Listing"}
       </h2>
+
       <form onSubmit={handleSubmit} className="mt-8 space-y-6">
         <div>
-          <label htmlFor="title" className="text-sm font-bold text-[#bcdff0]">
-            Title
-          </label>
+          <label className="text-sm font-bold text-[#bcdff0]">Title</label>
           <input
-            id="title"
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
             className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
-            placeholder="e.g., Cozy Self-Contain"
+            placeholder="e.g., Luxury Hostel Room"
           />
         </div>
 
         <div className="flex flex-col gap-6 sm:flex-row">
           <div className="flex-1">
-            <label htmlFor="price" className="text-sm font-bold text-[#bcdff0]">
+            <label className="text-sm font-bold text-[#bcdff0]">
               Price (₦)
             </label>
             <input
-              id="price"
               type="number"
               value={price}
               onChange={(e) => setPrice(e.target.value)}
@@ -148,14 +171,8 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             />
           </div>
           <div className="flex-1">
-            <label
-              htmlFor="location"
-              className="text-sm font-bold text-[#bcdff0]"
-            >
-              Location
-            </label>
+            <label className="text-sm font-bold text-[#bcdff0]">Location</label>
             <input
-              id="location"
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -165,159 +182,140 @@ export function ListingForm({ listing }: { listing?: Listing }) {
           </div>
         </div>
 
-        {/* 3. UPDATED ROOMS & CAPACITY SECTION */}
         <div className="flex flex-col gap-6 sm:flex-row">
           <div className="flex-1">
-            <label htmlFor="rooms" className="text-sm font-bold text-[#bcdff0]">
-              Number of Rooms
-            </label>
+            <label className="text-sm font-bold text-[#bcdff0]">Rooms</label>
             <select
-              id="rooms"
               value={rooms}
               onChange={(e) => setRooms(e.target.value)}
               required
-              className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
+              className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none appearance-none"
             >
-              <option>1</option>
-              <option>2</option>
-              <option>3</option>
-              <option>Shared</option>
+              <option value="1">1 Room</option>
+              <option value="2">2 Rooms</option>
+              <option value="3">3 Rooms</option>
+              <option value="Shared">Shared Space</option>
             </select>
           </div>
           <div className="flex-1">
-            <label
-              htmlFor="capacity"
-              className="text-sm font-bold text-[#bcdff0]"
-            >
-              Capacity (people)
+            <label className="text-sm font-bold text-[#bcdff0]">
+              Capacity (Max People)
             </label>
             <input
-              id="capacity"
               type="number"
               value={capacity}
               onChange={(e) => setCapacity(e.target.value)}
               required
               min="1"
               className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
-              placeholder="e.g., 2"
             />
           </div>
         </div>
 
+        {listing && parseInt(capacity) > 1 && (
+          <div className="rounded-lg bg-white/5 p-4 border border-white/10">
+            <h3 className="text-sm font-bold text-[#bcdff0] mb-3 flex items-center gap-2">
+              <span className="h-2 w-2 rounded-full bg-blue-400 animate-pulse" />
+              Roommate Management
+            </h3>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <label className="text-[10px] uppercase tracking-wider text-gray-400">
+                  Spots Filled
+                </label>
+                <div className="mt-1 w-full bg-black/20 text-white px-3 py-2 rounded border border-white/5">
+                  {spotsFilled} / {capacity}
+                </div>
+              </div>
+              <div className="flex-1">
+                <label className="text-[10px] uppercase tracking-wider text-gray-400">
+                  Occupants Gender
+                </label>
+                <div className="mt-1 w-full bg-black/20 text-white px-3 py-2 rounded border border-white/5">
+                  {occupantsGender === "male"
+                    ? "👨 Male"
+                    : occupantsGender === "female"
+                      ? "👩 Female"
+                      : "Any"}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div>
-          <label
-            htmlFor="description"
-            className="text-sm font-bold text-[#bcdff0]"
-          >
+          <label className="text-sm font-bold text-[#bcdff0]">
             Description
           </label>
           <textarea
-            id="description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             required
-            className="mt-2 w-full min-h-[100px] rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
+            className="mt-2 w-full min-h-[120px] rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
+            placeholder="Tell us about the space..."
           />
         </div>
 
-        {/* Image Uploaders */}
-        <div>
-          <label className="text-sm font-bold text-[#bcdff0]">
-            Main Image (Required)
-          </label>
-          <div className="mt-2">
+        <div className="space-y-4">
+          <label className="text-sm font-bold text-[#bcdff0]">Photos</label>
+          <ImageUploader
+            initialImageUrl={listing?.image_url}
+            onFileSelect={(file) => setImageFile1(file)}
+          />
+          <div className="grid grid-cols-2 gap-4">
             <ImageUploader
-              initialImageUrl={listing?.image_url}
-              onFileSelect={(file) => setImageFile1(file)}
+              initialImageUrl={listing?.image_url_2}
+              onFileSelect={(file) => setImageFile2(file)}
+            />
+            <ImageUploader
+              initialImageUrl={listing?.image_url_3}
+              onFileSelect={(file) => setImageFile3(file)}
             />
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <label className="text-sm font-bold text-[#bcdff0]">
-              Additional Image 2
-            </label>
-            <div className="mt-2">
-              <ImageUploader
-                initialImageUrl={listing?.image_url_2}
-                onFileSelect={(file) => setImageFile2(file)}
-              />
-            </div>
-          </div>
-          <div>
-            <label className="text-sm font-bold text-[#bcdff0]">
-              Additional Image 3
-            </label>
-            <div className="mt-2">
-              <ImageUploader
-                initialImageUrl={listing?.image_url_3}
-                onFileSelect={(file) => setImageFile3(file)}
-              />
-            </div>
-          </div>
-        </div>
-
-        <hr className="border-white/10" />
-
-        {/* Video Tour Section (Cloudinary) */}
-        <div>
+        <div className="pt-4">
           <label className="text-sm font-bold text-[#bcdff0]">Video Tour</label>
-          <p className="text-xs text-gray-400 mb-2">
-            Upload a short video (optional).
-          </p>
           <VideoUploader onUpload={(url) => setVideoUrl(url)} />
-        </div>
-
-        <div className="flex items-center gap-4">
-          <div className="h-[1px] flex-1 bg-white/10"></div>
-          <span className="text-xs text-gray-500 font-bold">OR</span>
-          <div className="h-[1px] flex-1 bg-white/10"></div>
-        </div>
-
-        <div>
-          <label
-            htmlFor="videoUrl"
-            className="text-sm font-bold text-[#bcdff0]"
-          >
-            Paste a YouTube/TikTok Link
-          </label>
           <input
-            id="videoUrl"
             type="url"
+            placeholder="Or paste a link to a video"
             value={videoUrl}
             onChange={(e) => setVideoUrl(e.target.value)}
-            className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
+            className="mt-4 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
           />
         </div>
 
-        <hr className="border-white/10" />
-
         <div>
-          <label
-            htmlFor="contactPhone"
-            className="text-sm font-bold text-[#bcdff0]"
-          >
-            Contact Phone (WhatsApp)
+          <label className="text-sm font-bold text-[#bcdff0]">
+            WhatsApp Number
           </label>
           <input
-            id="contactPhone"
             type="tel"
             value={contactPhone}
             onChange={(e) => setContactPhone(e.target.value)}
             required
+            placeholder="e.g., 08123456789"
             className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
           />
         </div>
 
-        {error && <p className="text-center text-sm text-red-400">{error}</p>}
+        {error && (
+          <p className="text-center text-sm text-red-400 bg-red-400/10 py-2 rounded-lg border border-red-400/20">
+            {error}
+          </p>
+        )}
 
         <button
           type="submit"
-          disabled={loading}
-          className="w-full rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-3 font-bold text-[#041322] disabled:opacity-50"
+          disabled={isPending}
+          className="w-full rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-4 font-bold text-[#041322] shadow-xl transition-all hover:opacity-90 disabled:opacity-50"
         >
-          {loading ? "Saving..." : listing ? "Save Changes" : "Submit Listing"}
+          {isPending
+            ? "Processing..."
+            : listing
+              ? "Save Changes"
+              : "Create Listing"}
         </button>
       </form>
     </div>

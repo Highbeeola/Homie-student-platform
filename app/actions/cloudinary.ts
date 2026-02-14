@@ -1,18 +1,20 @@
 // app/actions/cloudinary.ts
 "use server";
 
-import cloudinary from "@/lib/cloudinary"; // Import the configured client
+import cloudinary from "@/lib/cloudinary";
 
-// This is the secure action the VideoUploader will call
 export async function getUploadSignature() {
   const timestamp = Math.round(new Date().getTime() / 1000);
 
-  // This uses your secret key on the server to create a temporary, secure signature
+  // 1. Define the parameters to sign
+  const paramsToSign = {
+    timestamp: timestamp,
+    folder: "homie-videos", // precise folder name
+  };
+
+  // 2. Generate signature using the PRIVATE secret
   const signature = cloudinary.utils.api_sign_request(
-    {
-      timestamp: timestamp,
-      folder: "homie-videos",
-    },
+    paramsToSign,
     process.env.CLOUDINARY_API_SECRET!,
   );
 
