@@ -1,17 +1,20 @@
-// components/HeaderClient.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { UserNav } from "./UserNav";
 import type { Session } from "@supabase/supabase-js";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ShieldAlert } from "lucide-react";
 
 export default function HeaderClient({ session }: { session: Session | null }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   // Function to close the menu, useful for link clicks
   const closeMenu = () => setIsMenuOpen(false);
+
+  // Replace this with your actual admin email
+  const ADMIN_EMAIL = "your-email@gmail.com";
+  const isAdmin = session?.user?.email === ADMIN_EMAIL;
 
   return (
     <header className="relative flex items-center justify-between py-4">
@@ -60,7 +63,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
       <div className="md:hidden">
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
-          className="p-2 rounded-md text-white hover:bg-white/10"
+          className="p-2 rounded-md text-white hover:bg-white/10 transition-colors"
           aria-label="Toggle menu"
         >
           {isMenuOpen ? <X size={28} /> : <Menu size={28} />}
@@ -69,18 +72,30 @@ export default function HeaderClient({ session }: { session: Session | null }) {
 
       {/* Mobile Menu Overlay */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 w-full md:hidden bg-[#041322] border-t border-b border-white/10 shadow-xl z-50">
-          <nav className="flex flex-col p-4">
+        <div className="absolute top-full left-0 right-0 w-full md:hidden bg-[#041322] border-t border-b border-white/10 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2">
+          <nav className="flex flex-col p-4 space-y-1">
+            {/* ✅ INTEGRATED ADMIN LINK (Mobile) */}
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="px-4 py-3 rounded-md text-lg font-bold text-[#00d4ff] bg-[#00d4ff]/5 border border-[#00d4ff]/20 flex items-center gap-2 mb-2"
+                onClick={closeMenu}
+              >
+                <ShieldAlert size={20} />
+                Admin Portal
+              </Link>
+            )}
+
             <Link
               href="/browse"
-              className="px-4 py-3 rounded-md text-lg font-semibold hover:bg-white/10"
+              className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
               onClick={closeMenu}
             >
               Browse Spaces
             </Link>
             <Link
               href="/add-listing"
-              className="px-4 py-3 rounded-md text-lg font-semibold hover:bg-white/10"
+              className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
               onClick={closeMenu}
             >
               List a Space
@@ -92,26 +107,27 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               <>
                 <Link
                   href="/my-listings"
-                  className="px-4 py-3 rounded-md text-lg font-semibold hover:bg-white/10"
+                  className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
                   onClick={closeMenu}
                 >
                   My Listings
                 </Link>
                 <Link
                   href="/profile"
-                  className="px-4 py-3 rounded-md text-lg font-semibold hover:bg-white/10"
+                  className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
                   onClick={closeMenu}
                 >
                   Profile
                 </Link>
-                <div className="mt-2">
+                <div className="mt-4 pt-4 border-t border-white/10">
+                  {/* This handles the logout and user identity in the mobile menu */}
                   <UserNav userEmail={session.user.email!} />
                 </div>
               </>
             ) : (
               <Link
                 href="/auth"
-                className="px-4 py-3 rounded-md text-lg font-semibold bg-white/10 hover:bg-white/20"
+                className="px-4 py-3 rounded-md text-lg font-semibold bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] text-[#041322] text-center"
                 onClick={closeMenu}
               >
                 Sign In / Sign Up
