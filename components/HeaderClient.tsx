@@ -9,12 +9,14 @@ import { Menu, X, ShieldAlert } from "lucide-react";
 export default function HeaderClient({ session }: { session: Session | null }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  // Function to close the menu, useful for link clicks
   const closeMenu = () => setIsMenuOpen(false);
 
-  // Replace this with your actual admin email
-  const ADMIN_EMAIL = "your-email@gmail.com";
-  const isAdmin = session?.user?.email === ADMIN_EMAIL;
+  const ADMIN_EMAILS = [
+    "ibrahimoladehinde1@gmail.com",
+    "monsuratoladehinde69@gmail.com",
+  ];
+
+  const isAdmin = ADMIN_EMAILS.includes(session?.user?.email ?? "");
 
   return (
     <header className="relative flex items-center justify-between py-4">
@@ -33,20 +35,32 @@ export default function HeaderClient({ session }: { session: Session | null }) {
         </div>
       </Link>
 
-      {/* Desktop Navigation (Hidden on small screens) */}
+      {/* Desktop Navigation */}
       <nav className="hidden md:flex items-center gap-6">
+        {isAdmin && (
+          <Link
+            href="/admin"
+            className="font-semibold text-[#00d4ff] flex items-center gap-2"
+          >
+            <ShieldAlert size={18} />
+            Admin
+          </Link>
+        )}
+
         <Link
           href="/browse"
           className="font-semibold text-[#e6f9ff] transition-colors hover:text-white"
         >
           Browse Spaces
         </Link>
+
         <Link
           href="/add-listing"
           className="font-semibold text-[#e6f9ff] transition-colors hover:text-white"
         >
           List a Space
         </Link>
+
         {session ? (
           <UserNav userEmail={session.user.email!} />
         ) : (
@@ -59,7 +73,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
         )}
       </nav>
 
-      {/* Hamburger Button (Only visible on small screens) */}
+      {/* Hamburger */}
       <div className="md:hidden">
         <button
           onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -70,16 +84,15 @@ export default function HeaderClient({ session }: { session: Session | null }) {
         </button>
       </div>
 
-      {/* Mobile Menu Overlay */}
+      {/* Mobile Fullscreen Menu */}
       {isMenuOpen && (
-        <div className="absolute top-full left-0 right-0 w-full md:hidden bg-[#041322] border-t border-b border-white/10 shadow-2xl z-50 animate-in fade-in slide-in-from-top-2">
-          <nav className="flex flex-col p-4 space-y-1">
-            {/* ✅ INTEGRATED ADMIN LINK (Mobile) */}
+        <div className="absolute left-0 top-16 z-50 h-[calc(100vh-64px)] w-full bg-[#041322] px-6 py-8 md:hidden">
+          <nav className="flex flex-col space-y-6">
             {isAdmin && (
               <Link
                 href="/admin"
-                className="px-4 py-3 rounded-md text-lg font-bold text-[#00d4ff] bg-[#00d4ff]/5 border border-[#00d4ff]/20 flex items-center gap-2 mb-2"
                 onClick={closeMenu}
+                className="text-lg font-bold text-[#00d4ff] flex items-center gap-2"
               >
                 <ShieldAlert size={20} />
                 Admin Portal
@@ -88,52 +101,57 @@ export default function HeaderClient({ session }: { session: Session | null }) {
 
             <Link
               href="/browse"
-              className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
               onClick={closeMenu}
+              className="text-lg font-bold text-white hover:text-[#00d4ff]"
             >
               Browse Spaces
             </Link>
+
             <Link
               href="/add-listing"
-              className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
               onClick={closeMenu}
+              className="text-lg font-bold text-white hover:text-[#00d4ff]"
             >
               List a Space
             </Link>
 
-            <hr className="border-white/10 my-2" />
-
-            {session ? (
+            {session && (
               <>
                 <Link
                   href="/my-listings"
-                  className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
                   onClick={closeMenu}
+                  className="text-lg font-bold text-white hover:text-[#00d4ff]"
                 >
                   My Listings
                 </Link>
+
                 <Link
                   href="/profile"
-                  className="px-4 py-3 rounded-md text-lg font-semibold text-gray-200 hover:bg-white/10"
                   onClick={closeMenu}
+                  className="text-lg font-bold text-white hover:text-[#00d4ff]"
                 >
                   Profile
                 </Link>
-                <div className="mt-4 pt-4 border-t border-white/10">
-                  {/* This handles the logout and user identity in the mobile menu */}
-                  <UserNav userEmail={session.user.email!} />
-                </div>
               </>
-            ) : (
-              <Link
-                href="/auth"
-                className="px-4 py-3 rounded-md text-lg font-semibold bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] text-[#041322] text-center"
-                onClick={closeMenu}
-              >
-                Sign In / Sign Up
-              </Link>
             )}
           </nav>
+
+          <div className="mt-12 border-t border-white/10 pt-8">
+            {session ? (
+              <UserNav userEmail={session.user.email!} />
+            ) : (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-gray-400 mb-2">Join the community</p>
+                <Link
+                  href="/auth"
+                  onClick={closeMenu}
+                  className="w-full rounded-lg bg-[#00d4ff] py-3 text-center font-bold text-[#041322]"
+                >
+                  Log In
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </header>

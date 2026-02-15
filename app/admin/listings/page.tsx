@@ -30,7 +30,7 @@ export default async function AdminListingsPage() {
         Moderation content: View and remove inappropriate listings.
       </p>
 
-      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden">
+      <div className="rounded-xl border border-white/10 bg-white/5 overflow-hidden overflow-x-auto">
         <table className="min-w-full divide-y divide-white/10">
           <thead className="bg-white/5">
             <tr>

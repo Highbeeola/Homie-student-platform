@@ -2,15 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { createBrowserClient } from "@supabase/ssr";
-import HeaderClient from "@/components/HeaderClient";
 import { ImageUploader } from "@/components/ImageUploader";
 import { useRouter } from "next/navigation";
-import type { Session } from "@supabase/supabase-js";
-import type { Profile, ProfileStatus } from "@/types/profile";
+import type { User } from "@supabase/supabase-js"; // Import User type
+
+// ✅ FIX 1: Update the Type Definition to include "rejected"
+type Profile = {
+  id: string;
+  phone_number?: string | null;
+  // Added "rejected" to the list below:
+  verification_status?: "unverified" | "pending" | "verified" | "rejected";
+  id_card_url?: string | null;
+  full_name?: string | null;
+};
 
 export default function ProfilePage() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
+  const [user, setUser] = useState<User | null>(null); // Store the Auth User
+  const [profile, setProfile] = useState<Profile | null>(null); // Store the DB Profile
   const [loading, setLoading] = useState(true);
 
   // Phone Number State
@@ -30,28 +38,28 @@ export default function ProfilePage() {
   useEffect(() => {
     const fetchInitialData = async () => {
       setLoading(true);
+      // 1. Get Auth User
       const {
         data: { user },
       } = await supabase.auth.getUser();
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSession(session);
 
       if (!user) {
         router.push("/auth");
         return;
       }
 
+      setUser(user); // Save the user so we can access user.email later
+
+      // 2. Get Profile Data
       const { data, error } = await supabase
         .from("profiles")
-        .select<"*", Profile>("*")
+        .select("*")
         .eq("id", user.id)
         .single();
 
       if (data) {
-        setProfile(data);
-        setPhoneNumber(data.phone_number || ""); // Populate phone input
+        setProfile(data); // This data might NOT have email, which is fine
+        setPhoneNumber(data.phone_number || "");
       } else if (error) {
         console.error("Error fetching profile:", error);
       }
@@ -66,6 +74,7 @@ export default function ProfilePage() {
     setIsSaving(true);
     try {
       if (!profile) throw new Error("Profile not loaded");
+
       const { error } = await supabase
         .from("profiles")
         .update({ phone_number: phoneNumber.trim() })
@@ -84,7 +93,7 @@ export default function ProfilePage() {
     }
   };
 
-  // SUBMIT VERIFICATION (Restored from your former code)
+  // SUBMIT VERIFICATION
   const handleSubmitVerification = async () => {
     if (!idCardFile || !profile) {
       alert("Please select an ID card image to upload.");
@@ -94,21 +103,19 @@ export default function ProfilePage() {
     setIsSubmitting(true);
     try {
       const fileExt = idCardFile.name.split(".").pop();
-      const filePath = `${profile.id}/student_id.${fileExt}`;
+      const filePath = `verification/${profile.id}-${Date.now()}.${fileExt}`;
 
       // 1. Upload to Storage
       const { error: uploadError } = await supabase.storage
-        .from("verification-documents")
-        .upload(filePath, idCardFile, { upsert: true });
+        .from("listing-images") // Using existing bucket
+        .upload(filePath, idCardFile);
 
       if (uploadError) throw uploadError;
 
       // 2. Get Public URL
       const {
         data: { publicUrl },
-      } = supabase.storage
-        .from("verification-documents")
-        .getPublicUrl(filePath);
+      } = supabase.storage.from("listing-images").getPublicUrl(filePath);
 
       // 3. Update Profile Database Record
       const { error: updateError } = await supabase
@@ -121,17 +128,11 @@ export default function ProfilePage() {
 
       if (updateError) throw updateError;
 
-      alert(
-        "Verification documents submitted! Admin approval usually takes 24-48 hours.",
-      );
+      alert("Verification documents submitted! We will review them shortly.");
 
       setProfile((prev) =>
         prev
-          ? {
-              ...prev,
-              verification_status: "pending",
-              id_card_url: publicUrl,
-            }
+          ? { ...prev, verification_status: "pending", id_card_url: publicUrl }
           : null,
       );
     } catch (err: any) {
@@ -141,122 +142,118 @@ export default function ProfilePage() {
     }
   };
 
-  if (loading || !profile) {
+  if (loading) {
     return (
-      <div className="min-h-screen bg-[#001428] text-center p-8">
-        <HeaderClient session={session} />
-        <p className="mt-20 text-[#e6f9ff]">
-          {loading ? "Loading profile..." : "Could not load profile."}
-        </p>
+      <div className="min-h-screen bg-[#041322] flex items-center justify-center text-white">
+        Loading...
       </div>
     );
   }
 
-  const statusColors: Record<ProfileStatus, string> = {
-    unverified: "bg-yellow-900/50 text-yellow-300 border-yellow-700",
-    pending: "bg-blue-900/50 text-blue-300 border-blue-700",
-    verified: "bg-green-900/50 text-green-300 border-green-700",
+  // Handle status display
+  const status = profile?.verification_status || "unverified";
+
+  // Define colors for all 4 statuses
+  const statusColors = {
+    unverified: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
+    pending: "bg-blue-500/20 text-blue-400 border-blue-500/30",
+    verified: "bg-green-500/20 text-green-400 border-green-500/30",
+    rejected: "bg-red-500/20 text-red-400 border-red-500/30", // Added rejected color
   };
-  const status = profile.verification_status;
 
   return (
-    <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
-      <div className="mx-auto max-w-6xl px-4 pb-16">
-        <HeaderClient session={session} />
+    <div className="min-h-screen bg-[#041322] text-white p-4 pb-20">
+      <div className="mx-auto mt-8 max-w-lg">
+        <div className="rounded-2xl border border-white/10 bg-white/5 p-6 sm:p-8 shadow-2xl">
+          <h1 className="text-2xl font-bold">My Profile</h1>
 
-        <div className="mx-auto mt-12 max-w-lg">
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl">
-            <h1 className="text-2xl font-bold">My Profile</h1>
-            <p className="mt-4 text-gray-400">Email: {session?.user?.email}</p>
+          {/* ✅ FIX 2: Use user.email (Auth) instead of profile.email */}
+          <p className="mt-2 text-sm text-gray-400">{user?.email}</p>
 
-            <div className="mt-4 flex items-center gap-2">
-              <p>Verification Status:</p>
-              <span
-                className={`px-3 py-1 text-sm font-semibold rounded-full border ${statusColors[status]}`}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </span>
-            </div>
-
-            {/* PHONE NUMBER SECTION */}
-            <form
-              onSubmit={handleUpdateProfile}
-              className="mt-6 space-y-4 border-t border-white/10 pt-6"
+          <div className="mt-4 flex items-center gap-3">
+            <span className="text-sm text-gray-300">Account Status:</span>
+            <span
+              className={`px-3 py-1 text-xs font-bold uppercase tracking-wider rounded-full border ${statusColors[status] || statusColors.unverified}`}
             >
-              <div>
-                <label
-                  htmlFor="phone"
-                  className="text-sm font-bold text-[#bcdff0]"
-                >
-                  WhatsApp Contact Number
-                </label>
-                <input
-                  id="phone"
-                  type="tel"
-                  placeholder="e.g., 2348012345678"
-                  value={phoneNumber}
-                  onChange={(e) => setPhoneNumber(e.target.value)}
-                  className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none focus:ring-2 focus:ring-blue-500"
+              {status}
+            </span>
+          </div>
+
+          <hr className="my-6 border-white/10" />
+
+          {/* PHONE NUMBER SECTION */}
+          <form onSubmit={handleUpdateProfile} className="space-y-4">
+            <div>
+              <label className="text-sm font-bold text-[#bcdff0]">
+                WhatsApp Contact Number
+              </label>
+              <input
+                type="tel"
+                placeholder="e.g., +2348012345678"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="mt-2 w-full rounded-lg bg-black/30 border border-white/10 px-4 py-3 text-white focus:border-[#00d4ff] outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isSaving}
+              className="w-full rounded-lg bg-white/10 hover:bg-white/20 py-2.5 text-sm font-bold text-white transition disabled:opacity-50"
+            >
+              {isSaving ? "Saving..." : "Save Phone Number"}
+            </button>
+          </form>
+
+          <hr className="my-8 border-white/10" />
+
+          {/* VERIFICATION SECTION */}
+          {/* ✅ FIX 3: Check for 'rejected' here too */}
+          {status === "unverified" || status === "rejected" ? (
+            <div>
+              <h2 className="text-lg font-bold text-[#00d4ff] mb-2">
+                {status === "rejected"
+                  ? "Verification Rejected - Try Again"
+                  : "Get Verified"}
+              </h2>
+              <p className="text-sm text-gray-400 mb-4">
+                Upload your Student ID to gain the "Verified Seller" badge and
+                increase trust.
+              </p>
+
+              <div className="mb-4">
+                <ImageUploader
+                  onFileSelect={(file) => setIdCardFile(file)}
+                  initialImageUrl={profile?.id_card_url || undefined}
                 />
               </div>
+
               <button
-                type="submit"
-                disabled={isSaving}
-                className="rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:opacity-50"
+                onClick={handleSubmitVerification}
+                disabled={isSubmitting || !idCardFile}
+                className="w-full rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-3 font-bold text-[#041322] hover:opacity-90 disabled:opacity-50"
               >
-                {isSaving ? "Saving..." : "Save Phone Number"}
+                {isSubmitting ? "Uploading..." : "Submit ID for Review"}
               </button>
-            </form>
+            </div>
+          ) : null}
 
-            <hr className="my-8 border-white/10" />
+          {status === "pending" && (
+            <div className="rounded-lg bg-blue-500/10 p-4 border border-blue-500/20 text-center">
+              <p className="font-bold text-blue-400">Under Review</p>
+              <p className="mt-1 text-sm text-gray-400">
+                Admins are reviewing your ID. This usually takes 24 hours.
+              </p>
+            </div>
+          )}
 
-            {/* VERIFICATION SECTION */}
-            {status === "unverified" && (
-              <div>
-                <h2 className="text-lg font-semibold text-yellow-500">
-                  Submit for Verification
-                </h2>
-                <p className="mt-2 text-sm text-gray-400">
-                  Please upload a clear photo of your student ID card to unlock
-                  seller features.
-                </p>
-
-                <div className="mt-4">
-                  <ImageUploader onFileSelect={(file) => setIdCardFile(file)} />
-                </div>
-
-                <button
-                  onClick={handleSubmitVerification}
-                  disabled={isSubmitting || !idCardFile}
-                  className="mt-6 w-full rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] py-3 font-bold text-[#041322] transition hover:opacity-90 disabled:opacity-50"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit ID for Review"}
-                </button>
-              </div>
-            )}
-
-            {status === "pending" && (
-              <div className="text-center rounded-lg bg-blue-900/20 p-4 border border-blue-700/30">
-                <p className="font-medium">Your ID card is under review.</p>
-                <p className="mt-2 text-sm text-gray-400">
-                  Verification usually takes 24–48 hours. You will see a
-                  verified badge once approved.
-                </p>
-              </div>
-            )}
-
-            {status === "verified" && (
-              <div className="text-center rounded-lg bg-green-900/20 p-4 border border-green-700/30">
-                <p className="text-xl font-bold text-green-400">
-                  ✅ Account Verified
-                </p>
-                <p className="mt-2 text-sm text-gray-400">
-                  You now have full access to all seller features and your
-                  listings will show a verified badge.
-                </p>
-              </div>
-            )}
-          </div>
+          {status === "verified" && (
+            <div className="rounded-lg bg-green-500/10 p-4 border border-green-500/20 text-center">
+              <p className="font-bold text-green-400">✅ You are Verified!</p>
+              <p className="mt-1 text-sm text-gray-400">
+                Your listings now have the verified badge.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

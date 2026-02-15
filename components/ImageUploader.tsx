@@ -1,63 +1,80 @@
-// components/ImageUploader.tsx
 "use client";
 
-import { useState, useEffect, useId } from "react"; // 1. Import useId
+import { useState, useId } from "react";
+import Image from "next/image";
+import { X } from "lucide-react";
 
 type ImageUploaderProps = {
-  onFileSelect: (file: File | null) => void;
   initialImageUrl?: string | null;
+  onFileSelect: (file: File | null) => void;
 };
 
 export function ImageUploader({
-  onFileSelect,
   initialImageUrl,
+  onFileSelect,
 }: ImageUploaderProps) {
   const [previewUrl, setPreviewUrl] = useState<string | null>(
     initialImageUrl || null,
   );
-  const id = useId(); // 2. Generate a unique ID for this component instance
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.files && event.target.files.length > 0) {
-      const file = event.target.files[0];
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewUrl(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const id = useId();
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setPreviewUrl(URL.createObjectURL(file));
       onFileSelect(file);
     } else {
       onFileSelect(null);
     }
   };
 
+  const removeImage = () => {
+    setPreviewUrl(null);
+    onFileSelect(null);
+  };
+
   return (
-    <div>
-      {previewUrl ? (
-        <img
-          src={previewUrl}
-          alt="Image preview"
-          className="h-48 w-full rounded-lg object-cover"
-        />
-      ) : (
-        <div className="flex h-48 w-full items-center justify-center rounded-lg border-2 border-dashed border-gray-600">
-          <span className="text-gray-400">Image Preview</span>
-        </div>
-      )}
-      <div className="mt-4">
-        {/* 3. Use the unique ID in the htmlFor and id attributes */}
+    <div className="w-full">
+      {/* Preview Area */}
+      <div className="relative h-48 w-full overflow-hidden rounded-lg border border-dashed border-white/20 bg-white/5">
+        {previewUrl ? (
+          <>
+            <Image
+              src={previewUrl}
+              alt="Preview"
+              fill
+              className="object-cover"
+            />
+            <button
+              type="button"
+              onClick={removeImage}
+              className="absolute right-2 top-2 rounded-full bg-black/60 p-1 text-white hover:bg-red-500"
+            >
+              <X size={16} />
+            </button>
+          </>
+        ) : (
+          <div className="flex h-full items-center justify-center text-sm text-[#bcdff0]">
+            Image Preview
+          </div>
+        )}
+      </div>
+
+      {/* Button Section */}
+      <div className="mt-4 flex justify-center sm:justify-start">
         <label
           htmlFor={id}
-          className="cursor-pointer rounded-lg bg-white/10 px-4 py-2 font-semibold text-white transition-colors hover:bg-white/20"
+          className="cursor-pointer rounded-lg bg-gradient-to-r from-[#00d4ff] to-[#8A6CFF] px-6 py-2 text-sm font-semibold text-[#041322] transition hover:opacity-90"
         >
           Choose Image
         </label>
         <input
-          style={{ visibility: "hidden", position: "absolute" }}
-          type="file"
           id={id}
+          type="file"
           accept="image/*"
           onChange={handleFileChange}
+          className="hidden"
         />
       </div>
     </div>
