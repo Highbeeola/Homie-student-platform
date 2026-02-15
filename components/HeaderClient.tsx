@@ -84,17 +84,34 @@ export default function HeaderClient({ session }: { session: Session | null }) {
         </button>
       </div>
 
-      {/* Mobile Fullscreen Menu */}
+      {/* Fullscreen Mobile Menu */}
       {isMenuOpen && (
-        <div className="absolute left-0 top-16 z-50 h-[calc(100vh-64px)] w-full bg-[#041322] px-6 py-8 md:hidden">
-          <nav className="flex flex-col space-y-6">
+        <div className="fixed inset-0 z-50 flex flex-col bg-[#041322]/95 backdrop-blur-md transition-all duration-300 md:hidden">
+          {/* Header inside Menu */}
+          <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-tr from-[#00d4ff] to-blue-600" />
+              <span className="text-xl font-bold tracking-tight text-white">
+                Homie
+              </span>
+            </div>
+            <button
+              onClick={closeMenu}
+              className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+            >
+              <X size={24} />
+            </button>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="flex-1 flex flex-col justify-center px-8 space-y-6">
             {isAdmin && (
               <Link
                 href="/admin"
                 onClick={closeMenu}
-                className="text-lg font-bold text-[#00d4ff] flex items-center gap-2"
+                className="text-2xl font-bold text-[#00d4ff] flex items-center gap-2"
               >
-                <ShieldAlert size={20} />
+                <ShieldAlert size={22} />
                 Admin Portal
               </Link>
             )}
@@ -102,7 +119,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
             <Link
               href="/browse"
               onClick={closeMenu}
-              className="text-lg font-bold text-white hover:text-[#00d4ff]"
+              className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
             >
               Browse Spaces
             </Link>
@@ -110,7 +127,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
             <Link
               href="/add-listing"
               onClick={closeMenu}
-              className="text-lg font-bold text-white hover:text-[#00d4ff]"
+              className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
             >
               List a Space
             </Link>
@@ -120,34 +137,27 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                 <Link
                   href="/my-listings"
                   onClick={closeMenu}
-                  className="text-lg font-bold text-white hover:text-[#00d4ff]"
+                  className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
                 >
                   My Listings
-                </Link>
-
-                <Link
-                  href="/profile"
-                  onClick={closeMenu}
-                  className="text-lg font-bold text-white hover:text-[#00d4ff]"
-                >
-                  Profile
                 </Link>
               </>
             )}
           </nav>
 
-          <div className="mt-12 border-t border-white/10 pt-8">
+          {/* Footer Section */}
+          <div className="p-8 border-t border-white/10 bg-black/20">
             {session ? (
               <UserNav userEmail={session.user.email!} />
             ) : (
-              <div className="flex flex-col gap-3">
-                <p className="text-sm text-gray-400 mb-2">Join the community</p>
+              <div className="text-center">
+                <p className="text-gray-400 mb-4">Join the student community</p>
                 <Link
                   href="/auth"
                   onClick={closeMenu}
-                  className="w-full rounded-lg bg-[#00d4ff] py-3 text-center font-bold text-[#041322]"
+                  className="block w-full rounded-xl bg-[#00d4ff] py-4 font-bold text-[#041322] shadow-lg hover:opacity-90"
                 >
-                  Log In
+                  Log In / Sign Up
                 </Link>
               </div>
             )}
