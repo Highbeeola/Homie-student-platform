@@ -1,10 +1,10 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { BookingWidget } from "@/components/BookingWidget";
 import { RoommateStatus } from "@/components/RoommateStatus";
-import { MapPin, Home, Users, User } from "lucide-react";
+import { ListingGallery } from "@/components/ListingGallery"; // Import the new gallery
+import { MapPin, Home, Users, CheckCircle, ShieldAlert } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -16,12 +16,8 @@ export default async function ListingDetailPage(props: Props) {
   const params = await props.params;
   const listingId = params.id;
 
-  // DEBUG LOG: Check your VS Code terminal to see what ID is being requested
-  console.log("🔍 Requested Listing ID:", listingId);
-
   const supabase = await createSupabaseServerClient();
 
-  // 1. Fetch Listing (Using maybeSingle to avoid immediate crash)
   const { data: listing, error } = await supabase
     .from("listings")
     .select(
@@ -29,119 +25,99 @@ export default async function ListingDetailPage(props: Props) {
       *,
       profiles (
         full_name,
-        email,
+        verification_status,
         phone_number
       )
     `,
     )
     .eq("id", listingId)
-    .maybeSingle(); // <--- Changed from .single() to prevent crashes on 0 rows
+    .maybeSingle();
 
-  // 2. Handle Errors
-  if (error) {
-    console.error("❌ Database Error:", JSON.stringify(error, null, 2));
-    return notFound();
-  }
+  if (error || !listing) return notFound();
 
-  if (!listing) {
-    console.error("❌ No listing found with ID:", listingId);
-    return notFound();
-  }
+  // Logic for Real Data
+  const images = [
+    listing.image_url,
+    listing.image_url_2,
+    listing.image_url_3,
+  ].filter(Boolean) as string[];
+  const isVerified = listing.profiles?.verification_status === "verified";
+  const landlordName = listing.profiles?.full_name || "Landlord (No Name Set)";
 
-  // --- UI RENDER START ---
   return (
     <div className="min-h-screen bg-[#041322] text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <Link
-          href="/browse"
-          className="mb-6 inline-block text-sm text-[#bcdff0] hover:underline"
-        >
-          &larr; Back to Browse
-        </Link>
+        {/* 1. Header Section */}
+        <div className="mb-6">
+          <Link
+            href="/browse"
+            className="mb-4 inline-block text-sm text-[#bcdff0] hover:underline"
+          >
+            &larr; Back to Browse
+          </Link>
+          <h1 className="text-3xl font-extrabold sm:text-5xl text-white tracking-tight">
+            {listing.title}
+          </h1>
+          <div className="mt-3 flex items-center gap-2 text-sm text-gray-400">
+            <MapPin size={16} className="text-[#00d4ff]" />
+            <span>{listing.location}</span>
+          </div>
+        </div>
 
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          {/* LEFT COLUMN */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-white/5 border border-white/10">
-              {listing.image_url ? (
-                <Image
-                  src={listing.image_url}
-                  alt={listing.title || "Listing"}
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              ) : (
-                <div className="flex h-full items-center justify-center text-gray-500">
-                  No Image
+        {/* 2. Beautiful Image Gallery */}
+        <div className="mb-8">
+          <ListingGallery images={images} />
+        </div>
+
+        <div className="grid grid-cols-1 gap-12 lg:grid-cols-3">
+          {/* --- LEFT COLUMN: Description & Video --- */}
+          <div className="lg:col-span-2 space-y-10">
+            {/* Stats Bar */}
+            <div className="flex flex-wrap gap-6 border-b border-white/10 pb-8">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Home size={24} className="text-[#00d4ff]" />
                 </div>
-              )}
-              <div className="absolute bottom-4 left-4">
+                <div>
+                  <p className="font-bold">{listing.rooms} Room(s)</p>
+                  <p className="text-xs text-gray-400">Layout</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-white/5 rounded-lg border border-white/10">
+                  <Users size={24} className="text-[#00d4ff]" />
+                </div>
+                <div>
+                  <p className="font-bold">{listing.capacity} People</p>
+                  <p className="text-xs text-gray-400">Capacity</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                {/* Roommate Status Badge Component */}
                 <RoommateStatus listing={listing} />
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              {listing.image_url_2 && (
-                <div className="relative aspect-video overflow-hidden rounded-xl bg-white/5 border border-white/10">
-                  <Image
-                    src={listing.image_url_2}
-                    alt="Gallery"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-              {listing.image_url_3 && (
-                <div className="relative aspect-video overflow-hidden rounded-xl bg-white/5 border border-white/10">
-                  <Image
-                    src={listing.image_url_3}
-                    alt="Gallery"
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-              )}
-            </div>
-
+            {/* Description Text */}
             <div>
-              <h1 className="text-3xl font-bold sm:text-4xl">
-                {listing.title}
-              </h1>
-              <div className="mt-4 flex flex-wrap gap-4 text-sm text-gray-300">
-                <div className="flex items-center gap-1">
-                  <MapPin size={18} className="text-[#00d4ff]" />{" "}
-                  {listing.location}
-                </div>
-                <div className="flex items-center gap-1">
-                  <Home size={18} className="text-[#00d4ff]" /> {listing.rooms}{" "}
-                  Room(s)
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users size={18} className="text-[#00d4ff]" /> Capacity:{" "}
-                  {listing.capacity}
-                </div>
+              <h2 className="text-2xl font-bold text-white mb-4">
+                About this space
+              </h2>
+              <div className="prose prose-invert max-w-none text-gray-300 leading-7 whitespace-pre-line">
+                {listing.description}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-              <h2 className="mb-4 text-xl font-bold text-[#bcdff0]">
-                About this space
-              </h2>
-              <p className="whitespace-pre-line text-gray-300 leading-relaxed">
-                {listing.description}
-              </p>
-            </div>
-
+            {/* Video Section */}
             {listing.video_url && (
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h2 className="mb-4 text-xl font-bold text-[#bcdff0]">
+              <div>
+                <h2 className="text-2xl font-bold text-white mb-4">
                   Video Tour
                 </h2>
-                <div className="aspect-video w-full overflow-hidden rounded-lg">
+                <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black border border-white/10 shadow-2xl">
                   <video
                     controls
-                    className="h-full w-full bg-black"
+                    className="h-full w-full"
                     src={listing.video_url}
                   />
                 </div>
@@ -149,36 +125,53 @@ export default async function ListingDetailPage(props: Props) {
             )}
           </div>
 
-          {/* RIGHT COLUMN */}
+          {/* --- RIGHT COLUMN: Sidebar --- */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
+              {/* Booking Box */}
               <BookingWidget listing={listing} />
 
-              <div className="rounded-2xl border border-white/10 bg-white/5 p-6">
-                <h3 className="mb-4 text-lg font-bold text-white">
-                  Landlord / Agent
-                </h3>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600/20 text-blue-400">
-                    <User size={24} />
+              {/* Verified Landlord Card */}
+              <div className="rounded-2xl border border-white/10 bg-[#0B1D2E] p-6 shadow-lg">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="h-14 w-14 rounded-full bg-gradient-to-br from-[#00d4ff] to-purple-600 flex items-center justify-center text-xl font-bold text-white">
+                    {landlordName.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    {/* Safe access to profile data */}
-                    <p className="font-bold">
-                      {listing.profiles?.full_name || "Homie User"}
+                    <p className="font-bold text-lg text-white">
+                      {landlordName}
                     </p>
-                    <p className="text-xs text-gray-400">Verified Seller</p>
+
+                    {/* Logic: Only show Verified if DB says so */}
+                    {isVerified ? (
+                      <div className="flex items-center gap-1 text-green-400 text-xs font-bold mt-1">
+                        <CheckCircle size={12} />
+                        <span>Verified Seller</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 text-gray-500 text-xs mt-1">
+                        <ShieldAlert size={12} />
+                        <span>Unverified Member</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {listing.contact_phone && (
+
+                <hr className="border-white/10 mb-4" />
+
+                {listing.contact_phone ? (
                   <a
-                    href={`https://wa.me/${listing.contact_phone.replace("+", "")}`}
+                    href={`https://wa.me/${listing.contact_phone.replace(/\D/g, "")}`} // Regex removes '+' and spaces
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="mt-4 flex w-full items-center justify-center gap-2 rounded-lg border border-green-500/50 bg-green-500/10 py-3 font-bold text-green-400 hover:bg-green-500 hover:text-white"
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 font-bold text-white transition-transform hover:scale-105"
                   >
-                    Chat on WhatsApp
+                    <span>Chat on WhatsApp</span>
                   </a>
+                ) : (
+                  <p className="text-center text-sm text-gray-500">
+                    No contact provided
+                  </p>
                 )}
               </div>
             </div>
