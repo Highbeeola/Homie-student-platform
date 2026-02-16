@@ -2,62 +2,81 @@
 
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 
-export async function bookSpotAction(
-  listingId: string | number,
-  userGender: "Male" | "Female",
-) {
+export async function bookSpotAction(listingId: string | number, userGender: "Male" | "Female") {
   const supabase = await createSupabaseServerClient();
 
-  // 1. Get Current User
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) return { error: "You must be logged in to book." };
+  // 1. Get User
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: "You must be logged in." };
 
-  // 2. Fetch the Listing to check current status
-  const { data: listing, error: fetchError } = await supabase
+  // 2. Fetch Listing Status
+  const { data: listing } = await supabase
     .from("listings")
-    .select("id, capacity, spots_filled, occupants_gender, user_id")
+    .select("*")
     .eq("id", listingId)
     .single();
 
-  if (fetchError || !listing) return { error: "Listing not found." };
-
-  // 3. Validation Logic
-
-  // A. Check availability
+  if (!listing) return { error: "Listing not found." };
+  
+  // 3. Validation
   if (listing.spots_filled >= listing.capacity) {
-    return { error: "Sorry, this listing is fully booked." };
+    return { error: "This listing is fully booked." };
+  }
+  
+  // Check if user already booked this specific listing
+  const { data: existingBooking } = await supabase
+    .from("bookings")
+    .select("*")
+    .eq("listing_id", listingId)
+    .eq("user_id", user.id)
+    .single();
+
+  if (existingBooking) {
+    return { error: "You have already booked a spot here!" };
   }
 
-  // B. Check Gender Compatibility
-  // If spots are filled > 0, the new user MUST match the current occupants' gender
+  // Gender Check (logic remains the same)
   if (listing.spots_filled > 0 && listing.occupants_gender) {
     if (listing.occupants_gender !== userGender) {
-      return {
-        error: `This room is currently occupied by ${listing.occupants_gender}s. Only ${listing.occupants_gender}s can book the remaining spot.`,
-      };
+      return { error: `Gender mismatch. Only ${listing.occupants_gender}s allowed.` };
     }
   }
 
-  // 4. Update the Listing
-  // If it's the first booking (spots_filled === 0), we set the gender.
-  const newGender =
-    listing.spots_filled === 0 ? userGender : listing.occupants_gender;
+  // 4. PERFORM THE BOOKING (Transaction-like)
+  
+  // A. Insert into Bookings Table
+  const { error: bookingError } = await supabase
+    .from("bookings")
+    .insert({
+      user_id: user.id,
+      listing_id: listingId,
+      status: 'confirmed'
+    });
 
+  if (bookingError) {
+    console.error(bookingError);
+    return { error: "Failed to record booking." };
+  }
+
+  // B. Update Listing Counts
+  const newGender = listing.spots_filled === 0 ? userGender : listing.occupants_gender;
+  
   const { error: updateError } = await supabase
     .from("listings")
     .update({
       spots_filled: listing.spots_filled + 1,
-      occupants_gender: newGender,
+      occupants_gender: newGender
     })
     .eq("id", listingId);
 
-  if (updateError) return { error: "Failed to book spot." };
+  if (updateError) return { error: "Failed to update listing count." };
 
-  // 5. Success
+  // 5. Success & Redirect
+  revalidatePath("/my-bookings");
   revalidatePath(`/listing/${listingId}`);
-  revalidatePath("/browse");
-  return { success: true };
+  
+  // Optional: Redirect them to their new bookings page
+  redirect("/my-bookings");
 }
