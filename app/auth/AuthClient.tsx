@@ -1,4 +1,3 @@
-// app/auth/AuthClient.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -33,14 +32,28 @@ export default function AuthClient() {
     checkSession();
   }, [router, supabase]);
 
+  // ✅ HELPER: Generates a safe URL including https://
+  const getURL = () => {
+    let url = window.location.origin;
+    // Make sure it includes the protocol
+    if (!url.startsWith("http")) {
+      url = `https://${url}`;
+    }
+    return `${url}/auth/callback`;
+  };
+
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
+    // Use the safe URL helper
+    const redirectUrl = getURL();
+
     if (isSigningUp) {
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: `${location.origin}/auth/callback` },
+        options: { emailRedirectTo: redirectUrl }, // ✅ Fixed
       });
       if (error) {
         setError(error.message);
@@ -72,15 +85,21 @@ export default function AuthClient() {
   };
 
   const handleGoogleSignIn = async () => {
+    // Use the safe URL helper
+    const redirectUrl = getURL();
+
     await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${location.origin}/auth/callback` },
+      options: {
+        redirectTo: redirectUrl, // ✅ Fixed
+      },
     });
   };
 
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4">
+        {/* Pass session to Header to avoid double-fetching */}
         <HeaderClient session={session} />
       </div>
       <div className="mx-auto mt-20 max-w-md px-4 pb-16">
@@ -89,7 +108,7 @@ export default function AuthClient() {
             {isSigningUp ? "Create Your Account" : "Sign In to Homie"}
           </h2>
 
-          {/* GOOGLE BUTTON - FULL STYLING */}
+          {/* GOOGLE BUTTON */}
           <button
             onClick={handleGoogleSignIn}
             className="mt-6 w-full flex items-center justify-center gap-3 rounded-lg border border-white/20 bg-white/10 py-3 font-semibold text-white transition-colors hover:bg-white/20"
@@ -123,7 +142,7 @@ export default function AuthClient() {
             <hr className="w-full border-t border-white/20" />
           </div>
 
-          {/* EMAIL/PASSWORD FORM - FULL STYLING */}
+          {/* EMAIL/PASSWORD FORM */}
           <form onSubmit={handleAuth} className="space-y-6">
             <div>
               <label
@@ -172,7 +191,7 @@ export default function AuthClient() {
             </div>
           </form>
 
-          {/* TOGGLE - FULL STYLING */}
+          {/* TOGGLE */}
           <p className="mt-6 text-center text-sm">
             {isSigningUp
               ? "Already have an account?"
