@@ -2,6 +2,9 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // 1. Log that we started
+  console.log("🔵 Supabase Middleware running on:", request.nextUrl.pathname);
+
   let supabaseResponse = NextResponse.next({
     request,
   });
@@ -29,28 +32,24 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // IMPORTANT: You must call getUser() to refresh the auth token
+  // 2. Refresh the Session (Critical step)
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protected Routes Logic
-  // If user is NOT logged in and tries to access these pages, kick them to /auth
-  const protectedPaths = ["/my-listings", "/add-listing", "/profile", "/admin"];
-  const url = request.nextUrl.clone();
+  // 3. Log the result
+  console.log("👤 User Status:", user ? `Logged In (${user.email})` : "Guest");
 
-  if (!user && protectedPaths.some((path) => url.pathname.startsWith(path))) {
+  // 4. Protected Routes Logic
+  const protectedPaths = ["/my-bookings", "/add-listing", "/profile", "/admin"];
+  const isProtected = protectedPaths.some((path) =>
+    request.nextUrl.pathname.startsWith(path),
+  );
+
+  if (isProtected && !user) {
+    console.log("🚫 Access Denied: Redirecting to Auth");
+    const url = request.nextUrl.clone();
     url.pathname = "/auth";
-    return NextResponse.redirect(url);
-  }
-
-  // Optional: If user IS logged in and tries to go to /auth, kick them to /
-  if (
-    user &&
-    url.pathname.startsWith("/auth") &&
-    !url.pathname.includes("/callback")
-  ) {
-    url.pathname = "/";
     return NextResponse.redirect(url);
   }
 
@@ -64,7 +63,6 @@ export const config = {
      * - _next/static (static files)
      * - _next/image (image optimization files)
      * - favicon.ico (favicon file)
-     * Feel free to modify this pattern to include more paths.
      */
     "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)",
   ],

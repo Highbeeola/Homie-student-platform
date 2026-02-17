@@ -49,10 +49,19 @@ export default function HeaderClient({ session }: { session: Session | null }) {
 
         <Link
           href="/browse"
-          className="font-semibold text-[#e6f9ff] transition-colors hover:text-white"
+          className="text-sm font-bold text-white hover:text-[#00d4ff]"
         >
-          Browse Spaces
+          Browse
         </Link>
+
+        {session && (
+          <Link
+            href="/my-bookings"
+            className="text-sm font-bold text-white hover:text-[#00d4ff]"
+          >
+            My Bookings
+          </Link>
+        )}
 
         <Link
           href="/add-listing"
@@ -124,6 +133,16 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               Browse Spaces
             </Link>
 
+            {session && (
+              <Link
+                href="/my-bookings"
+                onClick={closeMenu}
+                className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
+              >
+                My Bookings
+              </Link>
+            )}
+
             <Link
               href="/add-listing"
               onClick={closeMenu}
@@ -133,15 +152,13 @@ export default function HeaderClient({ session }: { session: Session | null }) {
             </Link>
 
             {session && (
-              <>
-                <Link
-                  href="/my-listings"
-                  onClick={closeMenu}
-                  className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
-                >
-                  My Listings
-                </Link>
-              </>
+              <Link
+                href="/my-listings"
+                onClick={closeMenu}
+                className="text-2xl font-bold text-white hover:text-[#00d4ff] transition-colors"
+              >
+                My Listings
+              </Link>
             )}
           </nav>
 
@@ -151,7 +168,9 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               <UserNav userEmail={session.user.email!} />
             ) : (
               <div className="text-center">
-                <p className="text-gray-400 mb-4">Join the student community</p>
+                <p className="text-gray-400 mb-4">
+                  Join the student community
+                </p>
                 <Link
                   href="/auth"
                   onClick={closeMenu}
