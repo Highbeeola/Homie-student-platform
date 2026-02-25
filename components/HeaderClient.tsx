@@ -12,6 +12,7 @@ import {
   Home,
   List,
   User as UserIcon,
+  PlusCircle,
 } from "lucide-react";
 import type { Session } from "@supabase/supabase-js";
 
@@ -20,7 +21,6 @@ export default function HeaderClient({ session }: { session: Session | null }) {
   const router = useRouter();
   const user = session?.user;
 
-  // Check if user is admin (simple email check for UI)
   // Replace with your actual admin emails
   const isAdmin = ["your-email@gmail.com", "cofounder@gmail.com"].includes(
     user?.email || "",
@@ -38,15 +38,14 @@ export default function HeaderClient({ session }: { session: Session | null }) {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#041322]/90 backdrop-blur-md">
+    <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#041322]/95 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* --- 1. YOUR CUSTOM LOGO --- */}
+        {/* --- 1. LOGO --- */}
         <Link
           href="/"
-          className="flex items-center gap-3 group"
+          className="flex items-center gap-2 group"
           onClick={() => setIsMobileMenuOpen(false)}
         >
-          {/* Your Code: */}
           <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-xl font-extrabold text-[#041322] shadow-lg group-hover:scale-105 transition-transform">
             H
           </div>
@@ -86,17 +85,20 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               >
                 My Bookings
               </Link>
+
+              {/* ✅ ADDED BACK: My Listings */}
+              <Link
+                href="/my-listings"
+                className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+              >
+                My Spaces
+              </Link>
+
               <Link
                 href="/add-listing"
                 className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
               >
                 List a Space
-              </Link>
-              <Link
-                href="/my-listings"
-                className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
-              >
-                My Listings
               </Link>
             </>
           )}
@@ -134,101 +136,107 @@ export default function HeaderClient({ session }: { session: Session | null }) {
 
         {/* --- 4. MOBILE MENU BUTTON --- */}
         <button
-          className="md:hidden rounded-lg p-2 text-white hover:bg-white/10"
+          className="md:hidden p-2 text-white hover:bg-white/10 rounded-lg"
           onClick={() => setIsMobileMenuOpen(true)}
         >
           <Menu size={32} />
         </button>
       </div>
 
-      {/* --- 5. MOBILE MENU OVERLAY --- */}
+      {/* --- 5. MOBILE MENU OVERLAY (Solid Background) --- */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-50 bg-[#041322] flex flex-col animate-in slide-in-from-right duration-200">
-          {/* Header inside Menu */}
-          <div className="flex items-center justify-between px-4 h-20 border-b border-white/10">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-xl font-extrabold text-[#041322]">
-                H
-              </div>
-              <span className="text-xl font-bold text-white">Homie</span>
-            </div>
+        <div className="fixed inset-0 z-[100] bg-[#041322] flex flex-col h-screen w-screen animate-in slide-in-from-right duration-200">
+          {/* Mobile Header */}
+          <div className="flex items-center justify-between px-4 h-20 border-b border-white/10 bg-[#041322]">
+            <span className="text-lg font-bold text-white">Menu</span>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+              className="p-2 text-white bg-white/10 rounded-full"
             >
-              <X size={28} />
+              <X size={24} />
             </button>
           </div>
 
-          {/* Menu Links - TIGHT SPACING */}
-          <div className="flex-1 overflow-y-auto px-6 py-6">
-            <nav className="flex flex-col space-y-3">
-              <Link
-                href="/browse"
-                onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-3 rounded-lg p-2 text-white hover:bg-white/5 transition-colors"
-              >
-                <MapPin size={22} className="text-[#00d4ff]" />
-                <span className="font-bold text-lg">Browse Spaces</span>
-              </Link>
+          {/* Links Container */}
+          <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
+            <Link
+              href="/browse"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
+            >
+              <MapPin size={24} className="text-[#00d4ff]" />
+              <span className="text-2xl font-bold">Browse Spaces</span>
+            </Link>
 
-              {user && (
-                <>
-                  <Link
-                    href="/my-bookings"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-lg p-2 text-white hover:bg-white/5 transition-colors"
-                  >
-                    <Home size={22} className="text-[#00d4ff]" />
-                    <span className="font-bold text-lg">My Bookings</span>
-                  </Link>
-                  <Link
-                    href="/my-listings"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-lg p-2 text-white hover:bg-white/5 transition-colors"
-                  >
-                    <List size={22} className="text-[#00d4ff]" />
-                    <span className="font-bold text-lg">My Listings</span>
-                  </Link>
-                  <Link
-                    href="/add-listing"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                    className="flex items-center gap-3 rounded-lg p-2 text-[#00d4ff] hover:bg-white/5 transition-colors mt-2"
-                  >
-                    <span className="font-bold text-lg">+ List a Space</span>
-                  </Link>
-                </>
-              )}
-            </nav>
+            {user && (
+              <>
+                <Link
+                  href="/my-bookings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
+                >
+                  <Home size={24} className="text-[#00d4ff]" />
+                  <span className="text-2xl font-bold">My Bookings</span>
+                </Link>
+                <Link
+                  href="/my-listings"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
+                >
+                  <List size={24} className="text-[#00d4ff]" />
+                  <span className="text-2xl font-bold">My Spaces</span>
+                </Link>
+              </>
+            )}
+
+            <Link
+              href="/add-listing"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="flex items-center gap-4 text-[#00d4ff]"
+            >
+              <PlusCircle size={24} />
+              <span className="text-2xl font-bold">List a Space</span>
+            </Link>
+
+            {isAdmin && (
+              <Link
+                href="/admin"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-4 text-yellow-400 mt-6 pt-6 border-t border-white/10"
+              >
+                <span className="text-xl font-bold">Admin Portal</span>
+              </Link>
+            )}
           </div>
 
           {/* Footer User Section */}
-          <div className="p-6 border-t border-white/10 bg-black/20">
+          <div className="p-6 border-t border-white/10 bg-[#0B1D2E]">
             {user ? (
               <div className="flex items-center justify-between">
                 <Link
                   href="/profile"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-3 group"
+                  className="flex items-center gap-3"
                 >
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#00d4ff] to-blue-600 flex items-center justify-center font-bold text-white border-2 border-[#041322] group-hover:border-[#00d4ff]">
-                    <UserIcon size={24} />
+                  <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#00d4ff] to-blue-600 flex items-center justify-center text-white font-bold border-2 border-[#041322]">
+                    {user.email?.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex flex-col">
-                    <span className="font-bold text-white group-hover:text-[#00d4ff]">
-                      My Profile
-                    </span>
-                    <span className="text-xs text-gray-400 truncate max-w-[150px]">
+                  <div>
+                    <p className="font-bold text-white">My Profile</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[150px]">
                       {user.email}
-                    </span>
+                    </p>
                   </div>
                 </Link>
 
                 <button
                   onClick={handleSignOut}
-                  className="rounded-lg bg-red-500/10 p-3 text-red-500 hover:bg-red-500/20"
+                  className="flex flex-col items-center text-red-500 hover:text-red-400"
                 >
                   <LogOut size={24} />
+                  <span className="text-[10px] font-bold uppercase mt-1">
+                    Sign Out
+                  </span>
                 </button>
               </div>
             ) : (
