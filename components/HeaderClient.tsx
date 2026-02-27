@@ -144,73 +144,80 @@ export default function HeaderClient({ session }: { session: Session | null }) {
       </div>
 
       {/* --- 5. MOBILE MENU OVERLAY (Solid Background) --- */}
+      {/* --- 5. MOBILE MENU OVERLAY --- */}
       {isMobileMenuOpen && (
-        <div className="fixed inset-0 z-[100] bg-[#041322] flex flex-col h-screen w-screen animate-in slide-in-from-right duration-200">
+        <div className="fixed inset-0 z-[100] h-screen w-screen bg-[#041322] flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
           {/* Mobile Header */}
-          <div className="flex items-center justify-between px-4 h-20 border-b border-white/10 bg-[#041322]">
-            <span className="text-lg font-bold text-white">Menu</span>
+          <div className="flex items-center justify-between px-4 h-20 shrink-0 border-b border-white/10 bg-[#041322]">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-xl font-extrabold text-[#041322]">
+                H
+              </div>
+              <span className="text-xl font-bold text-white">Homie</span>
+            </div>
             <button
               onClick={() => setIsMobileMenuOpen(false)}
-              className="p-2 text-white bg-white/10 rounded-full"
+              className="rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
             >
-              <X size={24} />
+              <X size={28} />
             </button>
           </div>
 
-          {/* Links Container */}
-          <div className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
-            <Link
-              href="/browse"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
-            >
-              <MapPin size={24} className="text-[#00d4ff]" />
-              <span className="text-2xl font-bold">Browse Spaces</span>
-            </Link>
-
-            {user && (
-              <>
-                <Link
-                  href="/my-bookings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
-                >
-                  <Home size={24} className="text-[#00d4ff]" />
-                  <span className="text-2xl font-bold">My Bookings</span>
-                </Link>
-                <Link
-                  href="/my-listings"
-                  onClick={() => setIsMobileMenuOpen(false)}
-                  className="flex items-center gap-4 text-white hover:text-[#00d4ff]"
-                >
-                  <List size={24} className="text-[#00d4ff]" />
-                  <span className="text-2xl font-bold">My Spaces</span>
-                </Link>
-              </>
-            )}
-
-            <Link
-              href="/add-listing"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex items-center gap-4 text-[#00d4ff]"
-            >
-              <PlusCircle size={24} />
-              <span className="text-2xl font-bold">List a Space</span>
-            </Link>
-
-            {isAdmin && (
+          {/* Menu Links - WITH SCROLL LOCK */}
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            <nav className="flex flex-col space-y-4 pb-20">
+              {" "}
+              {/* Added padding bottom to ensure last item is visible */}
+              <Link
+                href="/browse"
+                onClick={() => setIsMobileMenuOpen(false)}
+                className="flex items-center gap-4 rounded-lg p-3 text-white hover:bg-white/5 transition-colors"
+              >
+                <MapPin size={24} className="text-[#00d4ff]" />
+                <span className="font-bold text-xl">Browse Spaces</span>
+              </Link>
+              {user && (
+                <>
+                  <Link
+                    href="/my-bookings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 rounded-lg p-3 text-white hover:bg-white/5 transition-colors"
+                  >
+                    <Home size={24} className="text-[#00d4ff]" />
+                    <span className="font-bold text-xl">My Bookings</span>
+                  </Link>
+                  <Link
+                    href="/my-listings"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 rounded-lg p-3 text-white hover:bg-white/5 transition-colors"
+                  >
+                    <List size={24} className="text-[#00d4ff]" />
+                    <span className="font-bold text-xl">My Spaces</span>
+                  </Link>
+                  <Link
+                    href="/add-listing"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                    className="flex items-center gap-4 rounded-lg p-3 text-[#00d4ff] bg-[#00d4ff]/10 hover:bg-[#00d4ff]/20 transition-colors mt-2"
+                  >
+                    <PlusCircle size={24} />
+                    <span className="font-bold text-xl">List a Space</span>
+                  </Link>
+                </>
+              )}
+              {/* Admin Link Mobile */}
+              {/* Add your logic to check admin here if needed */}
               <Link
                 href="/admin"
                 onClick={() => setIsMobileMenuOpen(false)}
-                className="flex items-center gap-4 text-yellow-400 mt-6 pt-6 border-t border-white/10"
+                className="flex items-center gap-4 rounded-lg p-3 text-yellow-400 hover:bg-white/5 transition-colors mt-4 border-t border-white/10"
               >
-                <span className="text-xl font-bold">Admin Portal</span>
+                <span className="font-bold text-xl">Admin Portal</span>
               </Link>
-            )}
+            </nav>
           </div>
 
-          {/* Footer User Section */}
-          <div className="p-6 border-t border-white/10 bg-[#0B1D2E]">
+          {/* Footer User Section - PINNED TO BOTTOM */}
+          <div className="shrink-0 p-6 border-t border-white/10 bg-[#0B1D2E]">
             {user ? (
               <div className="flex items-center justify-between">
                 <Link
@@ -221,22 +228,19 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                   <div className="h-12 w-12 rounded-full bg-gradient-to-r from-[#00d4ff] to-blue-600 flex items-center justify-center text-white font-bold border-2 border-[#041322]">
                     {user.email?.charAt(0).toUpperCase()}
                   </div>
-                  <div>
-                    <p className="font-bold text-white">My Profile</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[150px]">
+                  <div className="flex flex-col">
+                    <span className="font-bold text-white">My Profile</span>
+                    <span className="text-xs text-gray-400 truncate max-w-[150px]">
                       {user.email}
-                    </p>
+                    </span>
                   </div>
                 </Link>
 
                 <button
                   onClick={handleSignOut}
-                  className="flex flex-col items-center text-red-500 hover:text-red-400"
+                  className="rounded-lg bg-red-500/10 p-3 text-red-500 hover:bg-red-500/20"
                 >
                   <LogOut size={24} />
-                  <span className="text-[10px] font-bold uppercase mt-1">
-                    Sign Out
-                  </span>
                 </button>
               </div>
             ) : (

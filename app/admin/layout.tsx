@@ -6,7 +6,7 @@ import Link from "next/link";
 // REPLACE THIS with your actual login email
 const ADMIN_EMAILS = [
   "ibrahimoladehinde1@gmail.com",
-  "monsuratoladehinde69@gmail.com",
+  "azeezoladipupofatoye@gmail.com",
 ];
 
 export default async function AdminLayout({

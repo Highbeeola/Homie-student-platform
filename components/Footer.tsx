@@ -1,4 +1,3 @@
-// components/Footer.tsx
 import Link from "next/link";
 
 export function Footer() {
@@ -7,7 +6,6 @@ export function Footer() {
     { name: "List a Space", href: "/add-listing" },
     { name: "How It Works", href: "/how-it-works" },
   ];
-
   const companyLinks = [
     { name: "About Us", href: "/about" },
     { name: "Contact Us", href: "/contact" },
@@ -15,20 +13,20 @@ export function Footer() {
   ];
 
   return (
-    <footer className="mt-24 border-t border-white/10 pt-16 pb-8">
-      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-4">
+    // ✅ ADDED "bg-[#001428] text-slate-400" HERE
+    <footer className="mt-24 border-t border-white/10 pt-16 pb-8 bg-[#001428] text-slate-400">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8 mx-auto max-w-6xl px-4">
         {/* Column 1: Brand Info */}
         <div className="md:col-span-2">
           <Link href="/" className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-lg font-extrabold text-[#041322] shadow-lg">
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-white font-bold shadow-lg">
               H
             </div>
             <div>
               <h1 className="text-lg font-extrabold text-white">Homie</h1>
             </div>
           </Link>
-
-          <p className="mt-4 max-w-xs text-slate-400">
+          <p className="mt-4 text-slate-400 max-w-xs">
             The trusted peer-to-peer platform for student housing in Nigeria,
             built by students, for students.
           </p>
@@ -42,7 +40,7 @@ export function Footer() {
               <li key={link.name}>
                 <Link
                   href={link.href}
-                  className="text-slate-400 hover:text-white"
+                  className="text-slate-400 hover:text-white transition-colors"
                 >
                   {link.name}
                 </Link>
@@ -59,7 +57,7 @@ export function Footer() {
               <li key={link.name}>
                 <Link
                   href={link.href}
-                  className="text-slate-400 hover:text-white"
+                  className="text-slate-400 hover:text-white transition-colors"
                 >
                   {link.name}
                 </Link>

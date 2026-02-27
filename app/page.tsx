@@ -1,17 +1,17 @@
 // app/page.tsx
 export const dynamic = "force-dynamic";
 
-import { Header } from "@/components/Header";
+// import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
-import { Footer } from "@/components/Footer";
+// import { Footer } from "@/components/Footer";
 
 export default async function HomePage() {
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4">
-        <Header />
+        {/* <Header /> */}
         <Hero />
       </div>
 
@@ -24,7 +24,7 @@ export default async function HomePage() {
           <WhyChooseUs />
         </div>
 
-        <Footer />
+        {/* <Footer /> */}
       </div>
     </div>
   );
