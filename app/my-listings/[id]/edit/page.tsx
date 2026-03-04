@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound, redirect } from "next/navigation";
 import { ListingForm } from "@/components/ListingForm";
-import { Header } from "@/components/Header";
 import type { Listing } from "@/types/listing";
 
 // We use the Promise<...> signature here
@@ -44,7 +43,6 @@ export default async function Page({
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4 pb-16">
-        <Header />
         <div className="mx-auto mt-12 max-w-2xl">
           <ListingForm listing={listing} />
         </div>

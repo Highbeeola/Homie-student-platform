@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
-// import { Footer } from "@/components/Footer";
+import { Footer } from "@/components/Footer";
 
 export default async function HomePage() {
   return (
@@ -24,7 +24,7 @@ export default async function HomePage() {
           <WhyChooseUs />
         </div>
 
-        {/* <Footer /> */}
+        { <Footer /> }
       </div>
     </div>
   );

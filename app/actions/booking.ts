@@ -81,3 +81,46 @@ export async function bookSpotAction(
   revalidatePath(`/listing/${listingId}`);
   redirect("/my-bookings");
 }
+
+// ... inside app/actions/booking.ts
+
+export async function cancelBookingAction(bookingId: string) {
+  const supabase = await createSupabaseServerClient();
+
+  // 1. Get the booking FIRST so we know which listing to update
+  const { data: booking, error: fetchError } = await supabase
+    .from("bookings")
+    .select("listing_id")
+    .eq("id", bookingId)
+    .single();
+
+  if (fetchError || !booking) {
+    return { error: "Booking not found." };
+  }
+
+  // 2. Delete the Booking
+  const { error: deleteError } = await supabase
+    .from("bookings")
+    .delete()
+    .eq("id", bookingId);
+
+  if (deleteError) {
+    return { error: "Failed to delete booking. Permissions error?" };
+  }
+
+  // 3. Call the Secure Database Function to lower the count
+  // We use .rpc() because the user doesn't have permission to edit the listing table directly
+  const { error: rpcError } = await supabase.rpc("decrement_spot_count", {
+    listing_id_input: booking.listing_id,
+  });
+
+  if (rpcError) {
+    console.error("Counter update failed:", rpcError);
+    // We don't return an error here because the booking was already deleted,
+    // so from the user's perspective, it's done.
+    // Ideally, you'd use a transaction, but for MVP this is fine.
+  }
+
+  revalidatePath("/my-bookings");
+  return { success: true };
+}

@@ -2,6 +2,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Link from "next/link";
 import Image from "next/image";
 import { MapPin, Calendar } from "lucide-react";
+import { CancelBookingButton } from "@/components/CancelBookingButton";
 
 export const dynamic = "force-dynamic";
 
@@ -13,8 +14,7 @@ export default async function MyBookingsPage() {
 
   if (!user) return <div className="p-8 text-white">Please log in.</div>;
 
-  // Fetch bookings AND the related listing details
-  const { data: bookings, error } = await supabase
+  const { data: bookings } = await supabase
     .from("bookings")
     .select(
       `
@@ -99,6 +99,7 @@ export default async function MyBookingsPage() {
                     >
                       View Space
                     </Link>
+
                     {booking.listings?.contact_phone && (
                       <a
                         href={`https://wa.me/${booking.listings?.contact_phone}`}
@@ -109,6 +110,11 @@ export default async function MyBookingsPage() {
                         Contact Landlord
                       </a>
                     )}
+                  </div>
+
+                  {/* NEW CANCEL BUTTON */}
+                  <div className="mt-2">
+                    <CancelBookingButton bookingId={booking.id} />
                   </div>
                 </div>
               </div>

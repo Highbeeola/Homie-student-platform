@@ -20,7 +20,6 @@ export default async function AddListingPage() {
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4 pb-16">
-        <Header />
         <div className="mx-auto mt-12 max-w-2xl">
           <ListingForm />
         </div>
