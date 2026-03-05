@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -14,17 +15,17 @@ import {
   User as UserIcon,
   PlusCircle,
 } from "lucide-react";
-import type { Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js"; // ✅ Correct Import
 
-export default function HeaderClient({ session }: { session: Session | null }) {
+export default function HeaderClient({ user }: { user: User | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
-  const user = session?.user;
 
   // Replace with your actual admin emails
-  const isAdmin = ["your-email@gmail.com", "cofounder@gmail.com"].includes(
-    user?.email || "",
-  );
+  const isAdmin = [
+    "ibrahimoladehinde1@gmail.com",
+    "azeezoladipupofatoye@gmail.com",
+  ].includes(user?.email || "");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -36,11 +37,15 @@ export default function HeaderClient({ session }: { session: Session | null }) {
     router.refresh();
     setIsMobileMenuOpen(false);
   };
+  const pathname = usePathname();
+
+  // ✅ Hide navbar on auth pages
+  if (pathname.startsWith("/auth")) return null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#041322]/95 backdrop-blur-md">
       <div className="mx-auto flex h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        {/* --- 1. LOGO --- */}
+        {/* --- LOGO --- */}
         <Link
           href="/"
           className="flex items-center gap-2 group"
@@ -59,7 +64,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
           </div>
         </Link>
 
-        {/* --- 2. DESKTOP NAV --- */}
+        {/* --- DESKTOP NAV --- */}
         <nav className="hidden md:flex items-center gap-6">
           {isAdmin && (
             <Link
@@ -85,15 +90,12 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               >
                 My Bookings
               </Link>
-
-              {/* ✅ FIXED: href points to the folder '/my-listings', Text says 'My Spaces' */}
               <Link
                 href="/my-listings"
                 className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
               >
                 My Spaces
               </Link>
-
               <Link
                 href="/add-listing"
                 className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
@@ -104,7 +106,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
           )}
         </nav>
 
-        {/* --- 3. DESKTOP USER ACTIONS --- */}
+        {/* --- DESKTOP USER ACTIONS --- */}
         <div className="hidden md:flex items-center gap-4">
           {user ? (
             <div className="flex items-center gap-3">
@@ -126,7 +128,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
             </div>
           ) : (
             <Link
-              href="/auth"
+              href="/auth?mode=signin"
               className="rounded-xl bg-[#00d4ff] px-6 py-2.5 text-sm font-bold text-[#041322] hover:opacity-90 transition-opacity shadow-lg shadow-[#00d4ff]/20"
             >
               Sign In
@@ -134,7 +136,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
           )}
         </div>
 
-        {/* --- 4. MOBILE MENU BUTTON --- */}
+        {/* --- MOBILE MENU BUTTON --- */}
         <button
           className="md:hidden p-2 text-white hover:bg-white/10 rounded-lg"
           onClick={() => setIsMobileMenuOpen(true)}
@@ -143,7 +145,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
         </button>
       </div>
 
-      {/* --- 5. MOBILE MENU OVERLAY --- */}
+      {/* --- MOBILE MENU OVERLAY --- */}
       {isMobileMenuOpen && (
         <div className="fixed inset-0 z-[100] h-screen w-screen bg-[#041322] flex flex-col overflow-hidden animate-in slide-in-from-right duration-200">
           {/* Mobile Header */}
@@ -162,7 +164,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
             </button>
           </div>
 
-          {/* Menu Links - WITH SCROLL LOCK */}
+          {/* Links Container */}
           <div className="flex-1 overflow-y-auto px-6 py-6">
             <nav className="flex flex-col space-y-6 pb-24">
               <Link
@@ -173,6 +175,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                 <MapPin size={24} className="text-[#00d4ff]" />
                 <span className="font-bold text-xl">Browse Spaces</span>
               </Link>
+
               {user && (
                 <>
                   <Link
@@ -183,8 +186,6 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                     <Home size={24} className="text-[#00d4ff]" />
                     <span className="font-bold text-xl">My Bookings</span>
                   </Link>
-
-                  {/* ✅ FIXED: href points to '/my-listings' here too */}
                   <Link
                     href="/my-listings"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -193,7 +194,6 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                     <List size={24} className="text-[#00d4ff]" />
                     <span className="font-bold text-xl">My Spaces</span>
                   </Link>
-
                   <Link
                     href="/add-listing"
                     onClick={() => setIsMobileMenuOpen(false)}
@@ -204,6 +204,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
                   </Link>
                 </>
               )}
+
               {isAdmin && (
                 <Link
                   href="/admin"
@@ -215,6 +216,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               )}
             </nav>
           </div>
+
           {/* Footer User Section */}
           <div className="shrink-0 p-6 border-t border-white/10 bg-[#0B1D2E]">
             {user ? (
@@ -244,7 +246,7 @@ export default function HeaderClient({ session }: { session: Session | null }) {
               </div>
             ) : (
               <Link
-                href="/auth"
+                href="/auth?mode=signin"
                 onClick={() => setIsMobileMenuOpen(false)}
                 className="block w-full rounded-xl bg-[#00d4ff] py-4 text-center font-bold text-[#041322] shadow-lg"
               >

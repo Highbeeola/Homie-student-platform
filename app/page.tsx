@@ -1,17 +1,14 @@
-// app/page.tsx
-export const dynamic = "force-dynamic";
-
-// import { Header } from "@/components/Header";
 import { Hero } from "@/components/Hero";
 import { HowItWorks } from "@/components/HowItWorks";
 import { WhyChooseUs } from "@/components/WhyChooseUs";
 import { Footer } from "@/components/Footer";
 
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   return (
-    <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
+    <div className="flex flex-col text-[#e6f9ff]">
       <div className="mx-auto max-w-6xl px-4">
-        {/* <Header /> */}
         <Hero />
       </div>
 
@@ -23,8 +20,7 @@ export default async function HomePage() {
         <div className="mt-12 lg:mt-20">
           <WhyChooseUs />
         </div>
-
-        { <Footer /> }
+        <Footer />
       </div>
     </div>
   );

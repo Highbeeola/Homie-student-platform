@@ -1,7 +1,6 @@
 // app/add-listing/page.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
-import { Header } from "@/components/Header";
 import { ListingForm } from "@/components/ListingForm";
 
 export default async function AddListingPage() {

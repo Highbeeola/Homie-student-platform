@@ -4,7 +4,10 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { revalidatePath } from "next/cache";
 
 // UPDATE THIS with your real emails
-const ADMIN_EMAILS = ["your-email@gmail.com", "cofounder@gmail.com"];
+const ADMIN_EMAILS = [
+  "ibrahimoladehinde1@gmail.com",
+  "azeezoladipupofatoye@gmail.com",
+];
 
 async function checkAdminOrThrow() {
   const supabase = await createSupabaseServerClient();
