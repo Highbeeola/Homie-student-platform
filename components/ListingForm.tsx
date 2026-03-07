@@ -50,18 +50,43 @@ export function ListingForm({ listing }: { listing?: Listing }) {
     } = supabase.storage.from("listing-images").getPublicUrl(filePath);
     return publicUrl;
   };
+  const handlePriceChange = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "");
 
+    if (!digitsOnly) {
+      setPrice("");
+      return;
+    }
+
+    const formatted = Number(digitsOnly).toLocaleString("en-NG");
+    setPrice(formatted);
+  };
+  const formatPhoneNumber = (value: string) => {
+    const digitsOnly = value.replace(/\D/g, "").slice(0, 11);
+
+    if (digitsOnly.length <= 4) return digitsOnly;
+    if (digitsOnly.length <= 7) {
+      return `${digitsOnly.slice(0, 4)} ${digitsOnly.slice(4)}`;
+    }
+    return `${digitsOnly.slice(0, 4)} ${digitsOnly.slice(4, 7)} ${digitsOnly.slice(7)}`;
+  };
+
+  const handlePhoneChange = (value: string) => {
+    setContactPhone(formatPhoneNumber(value));
+  };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    console.log("1. Submit button clicked"); // Debug Step 1
+    console.log("1. Submit button clicked");
     setError(null);
 
+    // Basic Validation
     if (!listing && !imageFile1) {
       console.log("Validation failed: No main image");
       setError("Please select the main image.");
       return;
     }
 
+    // Capacity Validation (Only if editing)
     if (listing && parseInt(capacity) < spotsFilled) {
       console.log("Validation failed: Capacity lower than occupancy");
       setError(
@@ -106,7 +131,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
 
         const listingData = {
           title,
-          price: parseInt(price),
+          price: parseInt(price.replace(/,/g, "")),
           location,
           rooms,
           capacity: parseInt(capacity),
@@ -115,29 +140,38 @@ export function ListingForm({ listing }: { listing?: Listing }) {
           image_url: imageUrl1,
           image_url_2: imageUrl2,
           image_url_3: imageUrl3,
-          contact_phone: contactPhone,
+          contact_phone: contactPhone.replace(/\s/g, ""),
           user_id: user.id,
         };
 
         console.log("5. Calling Server Action with data:", listingData);
+
+        // The redirect usually happens inside here, which throws an error
         const result = await saveListingAction(listingData as any, listing?.id);
+
         console.log("6. Server Action Result:", result);
 
         if (result?.error) {
           console.error("Server Action returned error:", result.error);
           setError(result.error);
         } else {
+          // If the server action didn't redirect, we do it here
           console.log("Success! Redirecting...");
           router.push("/my-listings");
           router.refresh();
         }
       } catch (err: any) {
-        console.error("ERROR CAUGHT IN FORM:", err); // Final Safety Catch
-        setError(err.message);
+        // ✅ THE FIX: Ignore Next.js redirect errors
+        if (err.message && err.message.includes("NEXT_REDIRECT")) {
+          console.log("Redirecting successfully...");
+          return;
+        }
+
+        console.error("ERROR CAUGHT IN FORM:", err);
+        setError(err.message || "An unexpected error occurred.");
       }
     });
   };
-
   return (
     <div className="rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl">
       <h2 className="text-2xl font-bold">
@@ -163,10 +197,12 @@ export function ListingForm({ listing }: { listing?: Listing }) {
               Price (₦)
             </label>
             <input
-              type="number"
+              type="text"
               value={price}
-              onChange={(e) => setPrice(e.target.value)}
+              onChange={(e) => handlePriceChange(e.target.value)}
               required
+              inputMode="numeric"
+              placeholder="e.g. 120,000"
               className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
             />
           </div>
@@ -189,12 +225,20 @@ export function ListingForm({ listing }: { listing?: Listing }) {
               value={rooms}
               onChange={(e) => setRooms(e.target.value)}
               required
-              className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none appearance-none"
+              className="mt-2 w-full rounded-lg border border-white/10 bg-[#24384d] px-4 py-2 text-white outline-none"
             >
-              <option value="1">1 Room</option>
-              <option value="2">2 Rooms</option>
-              <option value="3">3 Rooms</option>
-              <option value="Shared">Shared Space</option>
+              <option value="1" className="bg-white text-black">
+                1 Room
+              </option>
+              <option value="2" className="bg-white text-black">
+                2 Rooms
+              </option>
+              <option value="3" className="bg-white text-black">
+                3 Rooms
+              </option>
+              <option value="Shared" className="bg-white text-black">
+                Shared Space
+              </option>
             </select>
           </div>
           <div className="flex-1">
@@ -293,9 +337,10 @@ export function ListingForm({ listing }: { listing?: Listing }) {
           <input
             type="tel"
             value={contactPhone}
-            onChange={(e) => setContactPhone(e.target.value)}
+            onChange={(e) => handlePhoneChange(e.target.value)}
             required
-            placeholder="e.g., 08123456789"
+            inputMode="numeric"
+            placeholder="e.g. 0812 345 6789"
             className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
           />
         </div>

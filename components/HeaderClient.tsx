@@ -4,7 +4,6 @@ import Link from "next/link";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { usePathname } from "next/navigation";
 import {
   Menu,
   X,
@@ -15,32 +14,30 @@ import {
   User as UserIcon,
   PlusCircle,
 } from "lucide-react";
-import type { User } from "@supabase/supabase-js"; // ✅ Correct Import
+import type { User } from "@supabase/supabase-js";
 
 export default function HeaderClient({ user }: { user: User | null }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
 
-  // Replace with your actual admin emails
-  const isAdmin = [
-    "ibrahimoladehinde1@gmail.com",
-    "azeezoladipupofatoye@gmail.com",
-  ].includes(user?.email || "");
+  const isAdmin = ["your-email@gmail.com", "cofounder@gmail.com"].includes(
+    user?.email || "",
+  );
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 
+  // ✅ UPDATED FUNCTION WITH CONFIRMATION
   const handleSignOut = async () => {
+    const confirmed = window.confirm("Are you sure you want to sign out?");
+    if (!confirmed) return;
+
     await supabase.auth.signOut();
     router.refresh();
     setIsMobileMenuOpen(false);
   };
-  const pathname = usePathname();
-
-  // ✅ Hide navbar on auth pages
-  if (pathname.startsWith("/auth")) return null;
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-white/10 bg-[#041322]/95 backdrop-blur-md">
