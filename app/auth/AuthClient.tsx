@@ -32,8 +32,6 @@ export default function AuthClient() {
     setShowPassword(false);
     setError(null);
     setMessage(null);
-
-    // Optional UX: don’t keep password when leaving signin/signup
     if (view === "recovery") setPassword("");
   }, [view]);
 
@@ -44,15 +42,21 @@ export default function AuthClient() {
         data: { session },
       } = await supabase.auth.getSession();
       setSession(session);
-      if (session) router.push("/");
+      if (session) {
+        // ✅ FIX 1: Hard redirect to force Header update
+        window.location.href = "/";
+      }
     };
     checkSession();
   }, [router, supabase]);
 
   const getURL = () => {
     let url = window.location.origin;
+    if (url.includes("localhost")) {
+      return "http://localhost:3000/auth/callback";
+    }
     if (!url.startsWith("http")) url = `https://${url}`;
-    return url;
+    return `${url}/auth/callback`;
   };
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -102,8 +106,8 @@ export default function AuthClient() {
 
       if (error) throw error;
 
-      router.refresh();
-      router.push("/");
+      // ✅ FIX 2: Hard redirect ensures the server sees the new cookie immediately
+      window.location.href = "/";
     } catch (err: any) {
       setError(err.message ?? "Something went wrong. Please try again.");
     } finally {
@@ -115,12 +119,22 @@ export default function AuthClient() {
     setError(null);
     setMessage(null);
 
-    await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: { redirectTo: `${getURL()}/auth/callback` },
-    });
-  };
+    // 1. Get the URL
+    const targetURL = getURL();
 
+    // 2. LOG IT to the Console (F12)
+    console.log("Attempting Google Sign In with Redirect:", targetURL);
+
+    // 3. Send it
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo: targetURL,
+      },
+    });
+
+    if (error) console.error("Supabase Auth Error:", error);
+  };x
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto mt-20 max-w-md px-4 pb-16">
@@ -131,7 +145,7 @@ export default function AuthClient() {
             {view === "recovery" && "Reset Password"}
           </h2>
 
-          {/* Social Login (Only for Sign In / Sign Up) */}
+          {/* Social Login */}
           {view !== "recovery" && (
             <>
               <button
@@ -183,13 +197,23 @@ export default function AuthClient() {
               />
             </div>
 
-            {/* Password + Forgot Password UNDER input */}
+            {/* Password */}
             {view !== "recovery" && (
               <div>
-                <label className="text-sm font-bold text-[#bcdff0]">
-                  Password
-                </label>
-
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-bold text-[#bcdff0]">
+                    Password
+                  </label>
+                  {view === "signin" && (
+                    <button
+                      type="button"
+                      onClick={() => setView("recovery")}
+                      className="text-xs text-[#00d4ff] hover:underline"
+                    >
+                      Forgot Password?
+                    </button>
+                  )}
+                </div>
                 <div className="relative mt-2">
                   <input
                     type={showPassword ? "text" : "password"}
@@ -202,24 +226,10 @@ export default function AuthClient() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white"
-                    aria-label={
-                      showPassword ? "Hide password" : "Show password"
-                    }
                   >
                     {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                   </button>
                 </div>
-
-                {/* ✅ MOVED HERE: under textbox */}
-                {view === "signin" && (
-                  <button
-                    type="button"
-                    onClick={() => setView("recovery")}
-                    className="mt-2 text-xs text-[#00d4ff] hover:underline"
-                  >
-                    Forgot password?
-                  </button>
-                )}
               </div>
             )}
 
@@ -249,7 +259,7 @@ export default function AuthClient() {
             </button>
           </form>
 
-          {/* Bottom Toggle */}
+          {/* Footer / Toggle View */}
           <div className="mt-6 text-center text-sm">
             {view === "recovery" ? (
               <button

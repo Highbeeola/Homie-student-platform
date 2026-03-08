@@ -7,6 +7,7 @@ import type { Listing } from "@/types/listing";
 import { ImageUploader } from "@/components/ImageUploader";
 import { VideoUploader } from "@/components/VideoUploader";
 import { saveListingAction } from "@/app/actions/listings";
+import dynamic from "next/dynamic";
 
 export function ListingForm({ listing }: { listing?: Listing }) {
   const [title, setTitle] = useState(listing?.title || "");
@@ -21,6 +22,9 @@ export function ListingForm({ listing }: { listing?: Listing }) {
   const [contactPhone, setContactPhone] = useState(
     listing?.contact_phone || "",
   );
+  const [lat, setLat] = useState(listing?.latitude || 6.5244);
+  const [lng, setLng] = useState(listing?.longitude || 3.3792);
+  const [isFetchingAddress, setIsFetchingAddress] = useState(false);
 
   const spotsFilled = listing?.spots_filled || 0;
   const occupantsGender = listing?.occupants_gender || "any";
@@ -37,6 +41,34 @@ export function ListingForm({ listing }: { listing?: Listing }) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
+  const LocationPicker = dynamic(() => import("@/components/LocationPicker"), {
+    ssr: false,
+    loading: () => (
+      <div className="h-[300px] w-full bg-white/5 animate-pulse rounded-xl" />
+    ),
+  });
+  const handleMapClick = async (newLat: number, newLng: number) => {
+    setLat(newLat);
+    setLng(newLng);
+
+    // Auto-fill address using OpenStreetMap API (Free)
+    setIsFetchingAddress(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${newLat}&lon=${newLng}`,
+      );
+      const data = await response.json();
+
+      if (data && data.display_name) {
+        // Update the text box
+        setLocation(data.display_name);
+      }
+    } catch (error) {
+      console.error("Could not fetch address", error);
+    } finally {
+      setIsFetchingAddress(false);
+    }
+  };
 
   const uploadImage = async (file: File, user_id: string): Promise<string> => {
     const fileExt = file.name.split(".").pop();
@@ -142,6 +174,8 @@ export function ListingForm({ listing }: { listing?: Listing }) {
           image_url_3: imageUrl3,
           contact_phone: contactPhone.replace(/\s/g, ""),
           user_id: user.id,
+          latitude: lat, // 4. Include in data
+          longitude: lng,
         };
 
         console.log("5. Calling Server Action with data:", listingData);
@@ -207,8 +241,16 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             />
           </div>
           <div className="flex-1">
-            <label className="text-sm font-bold text-[#bcdff0]">Location</label>
+            <label className="text-sm font-bold text-[#bcdff0]">
+              Location{" "}
+              {isFetchingAddress && (
+                <span className="text-xs text-yellow-400">
+                  (Fetching address...)
+                </span>
+              )}
+            </label>
             <input
+              name="location"
               type="text"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
@@ -217,7 +259,13 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             />
           </div>
         </div>
-
+        <div className="mt-6">
+          <LocationPicker
+            latitude={lat}
+            longitude={lng}
+            onLocationChange={handleMapClick}
+          />
+        </div>
         <div className="flex flex-col gap-6 sm:flex-row">
           <div className="flex-1">
             <label className="text-sm font-bold text-[#bcdff0]">Rooms</label>

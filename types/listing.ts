@@ -16,6 +16,8 @@ export type Listing = {
   capacity?: number;
   occupants_gender?: string | null;
   spots_filled?: number;
+  latitude?: number;
+  longitude?: number;
 };
 
 export default Listing;
