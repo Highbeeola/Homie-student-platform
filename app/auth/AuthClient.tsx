@@ -134,7 +134,7 @@ export default function AuthClient() {
     });
 
     if (error) console.error("Supabase Auth Error:", error);
-  };x
+  };
   return (
     <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
       <div className="mx-auto mt-20 max-w-md px-4 pb-16">
