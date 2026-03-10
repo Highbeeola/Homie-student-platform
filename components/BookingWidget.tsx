@@ -26,49 +26,36 @@ export function BookingWidget({ listing }: { listing: Listing }) {
   const isEmpty = filled === 0;
   const currentOccupantGender = listing.occupants_gender;
 
-  const handleBook = async () => {
-    // Validation: If room is empty, user MUST pick a gender
-    let genderToSubmit = currentOccupantGender;
-
-    if (isEmpty) {
-      if (!selectedGender) {
-        setFeedback({
-          type: "error",
-          message: "Please select your gender to set the room rules.",
-        });
-        return;
-      }
-      genderToSubmit = selectedGender; // The first user sets the rule
-    }
-
+  const handleBook = () => {
     setFeedback(null);
+    const genderToSubmit = isEmpty ? selectedGender : currentOccupantGender;
+
+    if (isEmpty && !selectedGender) {
+      alert("Please select a gender to continue.");
+      return;
+    }
 
     startTransition(async () => {
       try {
-        // Call the Server Action
         const result = await bookSpotAction(
           listing.id,
           genderToSubmit as "Male" | "Female",
         );
 
-        if (result.error) {
+        if (result?.error) {
           setFeedback({ type: "error", message: result.error });
         } else {
-          setFeedback({
-            type: "success",
-            message: "Success! You have booked a spot.",
-          });
-          router.refresh(); // Refresh page to update the UI numbers
+          // It worked! Show success and let the router push smoothly
+          setFeedback({ type: "success", message: "Success! Spot reserved." });
+          router.push("/my-bookings");
         }
-      } catch (err) {
-        setFeedback({
-          type: "error",
-          message: "Something went wrong. Please try again.",
-        });
+      } catch (err: any) {
+        // Just in case there is a REAL error, ignore the Next.js redirect glitch
+        if (err.message && err.message.includes("NEXT_REDIRECT")) return;
+        setFeedback({ type: "error", message: "Something went wrong." });
       }
     });
   };
-
   // 1. If Full
   if (isFull) {
     return (

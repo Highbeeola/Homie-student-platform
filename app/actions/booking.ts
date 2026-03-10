@@ -2,7 +2,6 @@
 
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
 
 export async function bookSpotAction(
   listingId: string | number,
@@ -42,7 +41,7 @@ export async function bookSpotAction(
     return { error: "You have already booked a spot here!" };
   }
 
-  // Gender Check (logic remains the same)
+  // Gender Check
   if (listing.spots_filled > 0 && listing.occupants_gender) {
     if (listing.occupants_gender !== userGender) {
       return {
@@ -73,16 +72,21 @@ export async function bookSpotAction(
 
   if (rpcError) {
     console.error("RPC Error:", rpcError);
-    // Note: We don't fail the whole action here because the booking record was already created
   }
 
-  // 5. Success & Redirect
+  // 5. Success
+  // Revalidate the paths so data is fresh
   revalidatePath("/my-bookings");
   revalidatePath(`/listing/${listingId}`);
-  redirect("/my-bookings");
+
+  // ✅ FIX: Return success instead of redirecting on the server
+  // This allows BookingWidget.tsx to handle the redirect smoothly without throwing an error!
+  return { success: true };
 }
 
-// ... inside app/actions/booking.ts
+// ------------------------------------------------------------------
+// CANCEL BOOKING ACTION
+// ------------------------------------------------------------------
 
 export async function cancelBookingAction(bookingId: string) {
   const supabase = await createSupabaseServerClient();
@@ -109,18 +113,15 @@ export async function cancelBookingAction(bookingId: string) {
   }
 
   // 3. Call the Secure Database Function to lower the count
-  // We use .rpc() because the user doesn't have permission to edit the listing table directly
   const { error: rpcError } = await supabase.rpc("decrement_spot_count", {
     listing_id_input: booking.listing_id,
   });
 
   if (rpcError) {
     console.error("Counter update failed:", rpcError);
-    // We don't return an error here because the booking was already deleted,
-    // so from the user's perspective, it's done.
-    // Ideally, you'd use a transaction, but for MVP this is fine.
   }
 
   revalidatePath("/my-bookings");
+
   return { success: true };
 }

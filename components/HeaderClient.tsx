@@ -10,7 +10,7 @@ export default function HeaderClient({ user }: { user: User | null }) {
   const router = useRouter();
 
   // Replace with your actual admin emails
-  const isAdmin = ["your-email@gmail.com", "cofounder@gmail.com"].includes(
+  const isAdmin = ["ibrahimoladehinde1@gmail.com", "azeezoladipupofatoye@gmail.com"].includes(
     user?.email || "",
   );
 
