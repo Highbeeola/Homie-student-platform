@@ -59,13 +59,21 @@ export default function HeaderClient({ user }: { user: User | null }) {
             </Link>
           )}
 
+          {/* Shown to EVERYONE */}
           <Link
             href="/browse"
             className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
           >
-            Browse
+            Find a Room
+          </Link>
+          <Link
+            href="/add-listing"
+            className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+          >
+            List a Space
           </Link>
 
+          {/* Shown ONLY to LOGGED IN users */}
           {user && (
             <>
               <Link
@@ -79,12 +87,6 @@ export default function HeaderClient({ user }: { user: User | null }) {
                 className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
               >
                 My Spaces
-              </Link>
-              <Link
-                href="/add-listing"
-                className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
-              >
-                List a Space
               </Link>
             </>
           )}
@@ -176,13 +178,21 @@ export default function HeaderClient({ user }: { user: User | null }) {
             </Link>
           )}
 
+          {/* Shown to EVERYONE */}
           <Link
             href="/browse"
             className="whitespace-nowrap hover:text-[#00d4ff] transition-colors"
           >
             Find a Room
           </Link>
+          <Link
+            href="/add-listing"
+            className="whitespace-nowrap text-[#00d4ff] hover:text-white transition-colors"
+          >
+            + List a Space
+          </Link>
 
+          {/* Shown ONLY to LOGGED IN users */}
           {user && (
             <>
               <Link
@@ -196,12 +206,6 @@ export default function HeaderClient({ user }: { user: User | null }) {
                 className="whitespace-nowrap hover:text-[#00d4ff] transition-colors"
               >
                 My Spaces
-              </Link>
-              <Link
-                href="/add-listing"
-                className="whitespace-nowrap text-[#00d4ff] hover:text-white transition-colors"
-              >
-                + List a Space
               </Link>
             </>
           )}
