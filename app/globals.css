@@ -21,3 +21,11 @@ body {
   /* Added font-sans here to ensure Geist is used */
   font-family: var(--font-sans), Arial, Helvetica, sans-serif;
 }
+/* Add to bottom of globals.css */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
