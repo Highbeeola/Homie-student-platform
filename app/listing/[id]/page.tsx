@@ -109,6 +109,7 @@ export default async function ListingDetailPage(props: Props) {
             </div>
 
             {/* Video Section */}
+            {/* Video Tour Section */}
             {listing.video_url && (
               <div>
                 <h2 className="text-2xl font-bold text-white mb-4">
@@ -117,8 +118,18 @@ export default async function ListingDetailPage(props: Props) {
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black border border-white/10 shadow-2xl">
                   <video
                     controls
-                    className="h-full w-full"
-                    src={listing.video_url}
+                    playsInline /* ✅ CRITICAL FOR iOS/IPHONE */
+                    preload="metadata" /* ✅ Stops it from downloading the whole video immediately, saving data */
+                    className="h-full w-full object-cover"
+                    src={
+                      // ✅ AUTOMATIC CLOUDINARY OPTIMIZATION
+                      listing.video_url.includes("cloudinary.com")
+                        ? listing.video_url.replace(
+                            "/upload/",
+                            "/upload/f_auto,q_auto,vc_auto/",
+                          )
+                        : listing.video_url
+                    }
                   />
                 </div>
               </div>
