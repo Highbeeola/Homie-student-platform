@@ -3,8 +3,16 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { BookingWidget } from "@/components/BookingWidget";
 import { RoommateStatus } from "@/components/RoommateStatus";
-import { ListingGallery } from "@/components/ListingGallery"; // Import the new gallery
-import { MapPin, Home, Users, CheckCircle, ShieldAlert } from "lucide-react";
+import { ListingGallery } from "@/components/ListingGallery";
+import { SaveButton } from "@/components/SaveButton"; // ✅ Imported Save Button
+import {
+  MapPin,
+  Home,
+  Users,
+  CheckCircle,
+  ShieldAlert,
+  Flag,
+} from "lucide-react"; // ✅ Imported Flag
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +25,11 @@ export default async function ListingDetailPage(props: Props) {
   const listingId = params.id;
 
   const supabase = await createSupabaseServerClient();
+
+  // ✅ FIX: Fetch the user so we can pass their email to the BookingWidget!
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   const { data: listing, error } = await supabase
     .from("listings")
@@ -41,7 +54,10 @@ export default async function ListingDetailPage(props: Props) {
     listing.image_url_2,
     listing.image_url_3,
   ].filter(Boolean) as string[];
+
+  // @ts-ignore
   const isVerified = listing.profiles?.verification_status === "verified";
+  // @ts-ignore
   const landlordName = listing.profiles?.full_name || "Landlord (No Name Set)";
 
   return (
@@ -55,12 +71,22 @@ export default async function ListingDetailPage(props: Props) {
           >
             &larr; Back to Browse
           </Link>
-          <h1 className="text-3xl font-extrabold sm:text-5xl text-white tracking-tight">
-            {listing.title}
-          </h1>
-          <div className="mt-3 flex items-center gap-2 text-sm text-gray-400">
-            <MapPin size={16} className="text-[#00d4ff]" />
-            <span>{listing.location}</span>
+
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-extrabold sm:text-5xl text-white tracking-tight">
+                {listing.title}
+              </h1>
+              <div className="mt-3 flex items-center gap-2 text-sm text-gray-400">
+                <MapPin size={16} className="text-[#00d4ff]" />
+                <span>{listing.location}</span>
+              </div>
+            </div>
+
+            {/* ✅ THE NEW SAVE BUTTON */}
+            <div className="mt-2 shrink-0">
+              <SaveButton listingId={listing.id} />
+            </div>
           </div>
         </div>
 
@@ -93,7 +119,6 @@ export default async function ListingDetailPage(props: Props) {
                 </div>
               </div>
               <div className="flex items-center gap-3">
-                {/* Roommate Status Badge Component */}
                 <RoommateStatus listing={listing} />
               </div>
             </div>
@@ -108,7 +133,6 @@ export default async function ListingDetailPage(props: Props) {
               </div>
             </div>
 
-            {/* Video Section */}
             {/* Video Tour Section */}
             {listing.video_url && (
               <div>
@@ -118,11 +142,10 @@ export default async function ListingDetailPage(props: Props) {
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black border border-white/10 shadow-2xl">
                   <video
                     controls
-                    playsInline /* ✅ CRITICAL FOR iOS/IPHONE */
-                    preload="metadata" /* ✅ Stops it from downloading the whole video immediately, saving data */
+                    playsInline
+                    preload="metadata"
                     className="h-full w-full object-cover"
                     src={
-                      // ✅ AUTOMATIC CLOUDINARY OPTIMIZATION
                       listing.video_url.includes("cloudinary.com")
                         ? listing.video_url.replace(
                             "/upload/",
@@ -139,8 +162,8 @@ export default async function ListingDetailPage(props: Props) {
           {/* --- RIGHT COLUMN: Sidebar --- */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              {/* Booking Box */}
-              <BookingWidget listing={listing} />
+              {/* ✅ FIX: Passed userEmail to stop the loop! */}
+              <BookingWidget listing={listing} userEmail={user?.email} />
 
               {/* Verified Landlord Card */}
               <div className="rounded-2xl border border-white/10 bg-[#0B1D2E] p-6 shadow-lg">
@@ -153,7 +176,6 @@ export default async function ListingDetailPage(props: Props) {
                       {landlordName}
                     </p>
 
-                    {/* Logic: Only show Verified if DB says so */}
                     {isVerified ? (
                       <div className="flex items-center gap-1 text-green-400 text-xs font-bold mt-1">
                         <CheckCircle size={12} />
@@ -172,7 +194,7 @@ export default async function ListingDetailPage(props: Props) {
 
                 {listing.contact_phone ? (
                   <a
-                    href={`https://wa.me/${listing.contact_phone.replace(/\D/g, "")}`} // Regex removes '+' and spaces
+                    href={`https://wa.me/${listing.contact_phone.replace(/\D/g, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 font-bold text-white transition-transform hover:scale-105"
@@ -184,6 +206,17 @@ export default async function ListingDetailPage(props: Props) {
                     No contact provided
                   </p>
                 )}
+
+                {/* ✅ THE NEW REPORT BUTTON */}
+                <div className="mt-6 pt-4 border-t border-white/10 text-center">
+                  <a
+                    href={`mailto:support@homie.com?subject=Report Listing ID: ${listing.id}&body=Hello Homie Admin,%0D%0A%0D%0AI want to report the listing titled "${listing.title}".%0D%0A%0D%0AReason for reporting: `}
+                    className="inline-flex items-center justify-center gap-2 text-xs font-bold text-gray-500 hover:text-red-400 transition-colors"
+                  >
+                    <Flag size={14} />
+                    Report this listing
+                  </a>
+                </div>
               </div>
             </div>
           </div>

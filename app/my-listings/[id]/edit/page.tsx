@@ -1,17 +1,22 @@
-// app/my-listings/[id]/edit/page.tsx
-export const dynamic = "force-dynamic";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound, redirect } from "next/navigation";
 import { ListingForm } from "@/components/ListingForm";
 import type { Listing } from "@/types/listing";
 
-// We use the Promise<...> signature here
-export default async function Page({
-  params,
-}: {
+export const dynamic = "force-dynamic";
+
+type Props = {
   params: Promise<{ id: string }>;
-}) {
+};
+
+export default async function EditListingPage(props: Props) {
+  // 1. Await params properly for Next.js 15+
+  const params = await props.params;
+  const listingId = params.id;
+
   const supabase = await createSupabaseServerClient();
+
+  // 2. Check Auth
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -19,33 +24,34 @@ export default async function Page({
     redirect("/auth");
   }
 
-  // THE PROVEN FIX: We await the params promise
-  const resolvedParams = await params;
-  const id = Array.isArray(resolvedParams.id)
-    ? resolvedParams.id[0]
-    : resolvedParams.id;
-  if (!id) {
-    return notFound();
-  }
-
+  // 3. Fetch the listing
+  // Security: .eq("user_id", user.id) ensures they can only edit THEIR OWN listing
   const { data: listing, error } = await supabase
     .from("listings")
-    .select<"*", Listing>("*")
-    .eq("id", id)
+    .select("*")
+    .eq("id", listingId)
     .eq("user_id", user.id)
     .single();
 
   if (error || !listing) {
-    console.error(`Could not fetch listing to edit with id ${id}:`, error);
-    notFound();
+    console.error("Edit fetch error:", error);
+    return notFound();
   }
 
+  // 4. Render the Form (No Header needed, layout.tsx handles it)
   return (
-    <div className="min-h-screen bg-[#001428] text-[#e6f9ff]">
-      <div className="mx-auto max-w-6xl px-4 pb-16">
-        <div className="mx-auto mt-12 max-w-2xl">
-          <ListingForm listing={listing} />
-        </div>
+    <div className="min-h-screen bg-[#041322] text-[#e6f9ff] py-12">
+      <div className="mx-auto max-w-3xl px-4">
+        {/* Back Button */}
+        <a
+          href="/my-listings"
+          className="inline-block text-sm text-[#bcdff0] hover:underline mb-6"
+        >
+          &larr; Back to My Spaces
+        </a>
+
+        {/* The Form */}
+        <ListingForm listing={listing} />
       </div>
     </div>
   );

@@ -221,7 +221,7 @@ export function ListingForm({ listing }: { listing?: Listing }) {
             onChange={(e) => setTitle(e.target.value)}
             required
             className="mt-2 w-full rounded-lg border-none bg-white/10 px-4 py-2 text-white outline-none"
-            placeholder="e.g., Luxury Hostel Room"
+            placeholder="e.g.,Nice three bed room apartment"
           />
         </div>
 

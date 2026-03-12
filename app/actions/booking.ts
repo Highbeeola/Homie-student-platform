@@ -3,33 +3,33 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { revalidatePath } from "next/cache";
 
+// app/actions/booking.ts
+
 export async function bookSpotAction(
   listingId: string | number,
-  userGender: "Male" | "Female",
+  userGender: "Male" | "Female" | "",
+  paymentReference: string, // ✅ NEW: Accept Paystack Ref
+  amountPaid: number, // ✅ NEW: Accept Amount Paid
 ) {
   const supabase = await createSupabaseServerClient();
 
-  // 1. Get User
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return { error: "You must be logged in." };
 
-  // 2. Fetch Listing Status
   const { data: listing } = await supabase
     .from("listings")
     .select("*")
     .eq("id", listingId)
     .single();
-
   if (!listing) return { error: "Listing not found." };
 
-  // 3. Validation
   if (listing.spots_filled >= listing.capacity) {
     return { error: "This listing is fully booked." };
   }
 
-  // Check if user already booked this specific listing
+  // Check if already booked
   const { data: existingBooking } = await supabase
     .from("bookings")
     .select("*")
@@ -37,53 +37,43 @@ export async function bookSpotAction(
     .eq("user_id", user.id)
     .single();
 
-  if (existingBooking) {
-    return { error: "You have already booked a spot here!" };
+  if (existingBooking) return { error: "You have already booked a spot here!" };
+
+  if (
+    listing.spots_filled > 0 &&
+    listing.occupants_gender &&
+    listing.occupants_gender !== userGender
+  ) {
+    return {
+      error: `Gender mismatch. Only ${listing.occupants_gender}s allowed.`,
+    };
   }
 
-  // Gender Check
-  if (listing.spots_filled > 0 && listing.occupants_gender) {
-    if (listing.occupants_gender !== userGender) {
-      return {
-        error: `Gender mismatch. Only ${listing.occupants_gender}s allowed.`,
-      };
-    }
-  }
-
-  // 4. PERFORM THE BOOKING
-
-  // A. Insert into Bookings Table
+  // ✅ 1. Insert into Bookings WITH PAYMENT DATA
   const { error: bookingError } = await supabase.from("bookings").insert({
     user_id: user.id,
     listing_id: listingId,
     status: "confirmed",
+    payment_reference: paymentReference,
+    amount_paid: amountPaid,
   });
 
   if (bookingError) return { error: "Failed to record booking." };
 
-  // B. Update Listing Counts using the Secure Function (RPC)
+  // ✅ 2. Update Listing Counts
   const newGender =
     listing.spots_filled === 0 ? userGender : listing.occupants_gender;
-
   const { error: rpcError } = await supabase.rpc("increment_spot_count", {
     listing_id: listingId,
     new_gender: newGender,
   });
 
-  if (rpcError) {
-    console.error("RPC Error:", rpcError);
-  }
-
-  // 5. Success
-  // Revalidate the paths so data is fresh
   revalidatePath("/my-bookings");
   revalidatePath(`/listing/${listingId}`);
-
-  // ✅ FIX: Return success instead of redirecting on the server
-  // This allows BookingWidget.tsx to handle the redirect smoothly without throwing an error!
   return { success: true };
 }
 
+// ... keep your cancelBookingAction as it is ...
 // ------------------------------------------------------------------
 // CANCEL BOOKING ACTION
 // ------------------------------------------------------------------

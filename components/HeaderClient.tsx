@@ -9,10 +9,10 @@ import type { User } from "@supabase/supabase-js";
 export default function HeaderClient({ user }: { user: User | null }) {
   const router = useRouter();
 
-  // Replace with your actual admin emails
-  const isAdmin = ["ibrahimoladehinde1@gmail.com", "azeezoladipupofatoye@gmail.com"].includes(
-    user?.email || "",
-  );
+  const isAdmin = [
+    "ibrahimoladehinde1@gmail.com",
+    "azeezoladipupofatoye@gmail.com",
+  ].includes(user?.email || "");
 
   const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -32,17 +32,17 @@ export default function HeaderClient({ user }: { user: User | null }) {
       {/* ========================================= */}
       {/* 🖥️ DESKTOP HEADER (Hidden on Mobile) */}
       {/* ========================================= */}
-      <div className="hidden md:flex mx-auto h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto hidden h-20 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8 md:flex">
         {/* --- LOGO --- */}
-        <Link href="/" className="flex items-center gap-2 group">
-          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-xl font-extrabold text-[#041322] shadow-lg group-hover:scale-105 transition-transform">
+        <Link href="/" className="group flex items-center gap-2">
+          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-xl font-extrabold text-[#041322] shadow-lg transition-transform group-hover:scale-105">
             H
           </div>
           <div className="flex flex-col">
-            <span className="text-xl font-bold tracking-tight text-white leading-none">
+            <span className="leading-none text-xl font-bold tracking-tight text-white">
               Homie
             </span>
-            <span className="text-[10px] text-gray-400 font-medium">
+            <span className="text-[10px] font-medium text-gray-400">
               Students helping students
             </span>
           </div>
@@ -53,22 +53,23 @@ export default function HeaderClient({ user }: { user: User | null }) {
           {isAdmin && (
             <Link
               href="/admin"
-              className="text-sm font-bold text-[#00d4ff] hover:text-white transition-colors flex items-center gap-1"
+              className="flex items-center gap-1 text-sm font-bold text-[#00d4ff] transition-colors hover:text-white"
             >
-              <span className="bg-[#00d4ff]/10 px-2 py-1 rounded">Admin</span>
+              <span className="rounded bg-[#00d4ff]/10 px-2 py-1">Admin</span>
             </Link>
           )}
 
           {/* Shown to EVERYONE */}
           <Link
             href="/browse"
-            className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+            className="text-sm font-bold text-gray-300 transition-colors hover:text-[#00d4ff]"
           >
             Find a Room
           </Link>
+
           <Link
             href="/add-listing"
-            className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+            className="text-sm font-bold text-gray-300 transition-colors hover:text-[#00d4ff]"
           >
             List a Space
           </Link>
@@ -77,14 +78,22 @@ export default function HeaderClient({ user }: { user: User | null }) {
           {user && (
             <>
               <Link
+                href="/saved-spaces"
+                className="text-sm font-bold text-gray-300 transition-colors hover:text-[#00d4ff]"
+              >
+                Saved Spaces
+              </Link>
+
+              <Link
                 href="/my-bookings"
-                className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+                className="text-sm font-bold text-gray-300 transition-colors hover:text-[#00d4ff]"
               >
                 My Bookings
               </Link>
+
               <Link
                 href="/my-listings"
-                className="text-sm font-bold text-gray-300 hover:text-[#00d4ff] transition-colors"
+                className="text-sm font-bold text-gray-300 transition-colors hover:text-[#00d4ff]"
               >
                 My Spaces
               </Link>
@@ -98,16 +107,16 @@ export default function HeaderClient({ user }: { user: User | null }) {
             <div className="flex items-center gap-3">
               <Link
                 href="/profile"
-                className="hover:opacity-80 transition-opacity"
+                className="transition-opacity hover:opacity-80"
               >
-                <div className="h-10 w-10 rounded-full bg-gradient-to-r from-[#00d4ff] to-blue-600 flex items-center justify-center text-sm font-bold text-white border-2 border-[#041322]">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-[#041322] bg-gradient-to-r from-[#00d4ff] to-blue-600 text-sm font-bold text-white">
                   <UserIcon size={20} />
                 </div>
               </Link>
 
               <button
                 onClick={handleSignOut}
-                className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                className="rounded-lg bg-red-500/10 px-4 py-2 text-sm font-bold text-red-500 transition-all hover:bg-red-500 hover:text-white"
               >
                 Sign Out
               </button>
@@ -115,7 +124,7 @@ export default function HeaderClient({ user }: { user: User | null }) {
           ) : (
             <Link
               href="/auth?mode=signin"
-              className="rounded-xl bg-[#00d4ff] px-6 py-2.5 text-sm font-bold text-[#041322] hover:opacity-90 transition-opacity shadow-lg shadow-[#00d4ff]/20"
+              className="rounded-xl bg-[#00d4ff] px-6 py-2.5 text-sm font-bold text-[#041322] shadow-lg shadow-[#00d4ff]/20 transition-opacity hover:opacity-90"
             >
               Sign In
             </Link>
@@ -126,14 +135,14 @@ export default function HeaderClient({ user }: { user: User | null }) {
       {/* ========================================= */}
       {/* 📱 MOBILE HEADER (Hidden on Desktop) */}
       {/* ========================================= */}
-      <div className="flex md:hidden flex-col">
+      <div className="flex flex-col md:hidden">
         {/* Top Row: Logo & User Actions */}
         <div className="flex h-16 items-center justify-between px-4">
           <Link href="/" className="flex items-center gap-2">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-[#00d4ff] to-[#8A6CFF] text-lg font-extrabold text-[#041322] shadow-lg">
               H
             </div>
-            <span className="text-xl font-bold tracking-tight text-white leading-none">
+            <span className="leading-none text-xl font-bold tracking-tight text-white">
               Homie
             </span>
           </Link>
@@ -143,15 +152,16 @@ export default function HeaderClient({ user }: { user: User | null }) {
               <>
                 <Link
                   href="/profile"
-                  className="hover:opacity-80 transition-opacity"
+                  className="transition-opacity hover:opacity-80"
                 >
-                  <div className="h-9 w-9 rounded-full bg-gradient-to-r from-[#00d4ff] to-blue-600 flex items-center justify-center text-sm font-bold text-white border-2 border-[#041322]">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full border-2 border-[#041322] bg-gradient-to-r from-[#00d4ff] to-blue-600 text-sm font-bold text-white">
                     <UserIcon size={16} />
                   </div>
                 </Link>
+
                 <button
                   onClick={handleSignOut}
-                  className="rounded-lg bg-red-500/10 p-2 text-red-500 hover:bg-red-500 hover:text-white transition-all"
+                  className="rounded-lg bg-red-500/10 p-2 text-red-500 transition-all hover:bg-red-500 hover:text-white"
                 >
                   <LogOut size={18} />
                 </button>
@@ -168,11 +178,11 @@ export default function HeaderClient({ user }: { user: User | null }) {
         </div>
 
         {/* Bottom Row: Horizontal Scroll Nav */}
-        <nav className="flex items-center gap-6 overflow-x-auto px-4 py-3 hide-scrollbar text-sm font-bold text-gray-300 border-t border-white/10">
+        <nav className="hide-scrollbar flex items-center gap-6 overflow-x-auto border-t border-white/10 px-4 py-3 text-sm font-bold text-gray-300">
           {isAdmin && (
             <Link
               href="/admin"
-              className="whitespace-nowrap text-[#00d4ff] hover:text-white transition-colors"
+              className="whitespace-nowrap text-[#00d4ff] transition-colors hover:text-white"
             >
               Admin
             </Link>
@@ -181,13 +191,14 @@ export default function HeaderClient({ user }: { user: User | null }) {
           {/* Shown to EVERYONE */}
           <Link
             href="/browse"
-            className="whitespace-nowrap hover:text-[#00d4ff] transition-colors"
+            className="whitespace-nowrap transition-colors hover:text-[#00d4ff]"
           >
             Find a Room
           </Link>
+
           <Link
             href="/add-listing"
-            className="whitespace-nowrap text-[#00d4ff] hover:text-white transition-colors"
+            className="whitespace-nowrap text-[#00d4ff] transition-colors hover:text-white"
           >
             + List a Space
           </Link>
@@ -196,14 +207,22 @@ export default function HeaderClient({ user }: { user: User | null }) {
           {user && (
             <>
               <Link
+                href="/saved-spaces"
+                className="whitespace-nowrap transition-colors hover:text-[#00d4ff]"
+              >
+                Saved Spaces
+              </Link>
+
+              <Link
                 href="/my-bookings"
-                className="whitespace-nowrap hover:text-[#00d4ff] transition-colors"
+                className="whitespace-nowrap transition-colors hover:text-[#00d4ff]"
               >
                 My Bookings
               </Link>
+
               <Link
                 href="/my-listings"
-                className="whitespace-nowrap hover:text-[#00d4ff] transition-colors"
+                className="whitespace-nowrap transition-colors hover:text-[#00d4ff]"
               >
                 My Spaces
               </Link>
