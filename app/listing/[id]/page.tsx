@@ -1,10 +1,11 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { BookingWidget } from "@/components/BookingWidget";
+import dynamic from "next/dynamic"; // ✅ Required for Paystack
+
 import { RoommateStatus } from "@/components/RoommateStatus";
 import { ListingGallery } from "@/components/ListingGallery";
-import { SaveButton } from "@/components/SaveButton"; // ✅ Imported Save Button
+import { SaveButton } from "@/components/SaveButton";
 import {
   MapPin,
   Home,
@@ -12,9 +13,23 @@ import {
   CheckCircle,
   ShieldAlert,
   Flag,
-} from "lucide-react"; // ✅ Imported Flag
+} from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+// ✅ THE FIX: Dynamically import the BookingWidget so Paystack ONLY loads in the browser.
+// Make sure there is NO static `import { BookingWidget }` at the top!
+const BookingWidget = dynamic(
+  () => import("@/components/BookingWidget").then((mod) => mod.BookingWidget),
+  {
+    ssr: false, // This tells Next.js: "Do not run this on the server!"
+    loading: () => (
+      <div className="h-64 w-full rounded-2xl bg-white/5 border border-white/10 animate-pulse flex items-center justify-center text-gray-500">
+        Loading payment securely...
+      </div>
+    ),
+  },
+);
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -26,7 +41,7 @@ export default async function ListingDetailPage(props: Props) {
 
   const supabase = await createSupabaseServerClient();
 
-  // ✅ FIX: Fetch the user so we can pass their email to the BookingWidget!
+  // Fetch the user so we can pass their email to the BookingWidget
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -83,7 +98,7 @@ export default async function ListingDetailPage(props: Props) {
               </div>
             </div>
 
-            {/* ✅ THE NEW SAVE BUTTON */}
+            {/* THE NEW SAVE BUTTON */}
             <div className="mt-2 shrink-0">
               <SaveButton listingId={listing.id} />
             </div>
@@ -142,10 +157,11 @@ export default async function ListingDetailPage(props: Props) {
                 <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black border border-white/10 shadow-2xl">
                   <video
                     controls
-                    playsInline
-                    preload="metadata"
+                    playsInline /* CRITICAL FOR iOS/IPHONE */
+                    preload="metadata" /* Stops it from downloading the whole video immediately */
                     className="h-full w-full object-cover"
                     src={
+                      // AUTOMATIC CLOUDINARY OPTIMIZATION
                       listing.video_url.includes("cloudinary.com")
                         ? listing.video_url.replace(
                             "/upload/",
@@ -162,7 +178,7 @@ export default async function ListingDetailPage(props: Props) {
           {/* --- RIGHT COLUMN: Sidebar --- */}
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
-              {/* ✅ FIX: Passed userEmail to stop the loop! */}
+              {/* Passed userEmail to the Dynamic BookingWidget */}
               <BookingWidget listing={listing} userEmail={user?.email} />
 
               {/* Verified Landlord Card */}
@@ -193,24 +209,29 @@ export default async function ListingDetailPage(props: Props) {
                 <hr className="border-white/10 mb-4" />
 
                 {listing.contact_phone ? (
-                  <a
-                    href={`https://wa.me/${listing.contact_phone.replace(/\D/g, "")}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-[#25D366] py-3 font-bold text-white transition-transform hover:scale-105"
+                  <button
+                    disabled
+                    className="flex w-full items-center justify-center gap-2 rounded-lg bg-gray-800 py-3 font-bold text-gray-400 cursor-not-allowed border border-gray-700"
                   >
-                    <span>Chat on WhatsApp</span>
-                  </a>
+                    <Lock size={18} />
+                    <span>Unlock to Chat on WhatsApp</span>
+                  </button>
                 ) : (
                   <p className="text-center text-sm text-gray-500">
                     No contact provided
                   </p>
                 )}
 
-                {/* ✅ THE NEW REPORT BUTTON */}
+                {listing.contact_phone && (
+                  <p className="text-[10px] text-center text-gray-500 mt-2">
+                    Reserve this space to instantly reveal the contact number.
+                  </p>
+                )}
+
+                {/* FIXED REPORT BUTTON */}
                 <div className="mt-6 pt-4 border-t border-white/10 text-center">
                   <a
-                    href={`mailto:support@homie.com?subject=Report Listing ID: ${listing.id}&body=Hello Homie Admin,%0D%0A%0D%0AI want to report the listing titled "${listing.title}".%0D%0A%0D%0AReason for reporting: `}
+                    href={`mailto:homieproject@gmail.com?subject=Report Listing ID: ${listing.id}&body=Hello Homie Admin,%0D%0A%0D%0AI want to report the listing titled "${listing.title}".%0D%0A%0D%0AReason for reporting: `}
                     className="inline-flex items-center justify-center gap-2 text-xs font-bold text-gray-500 hover:text-red-400 transition-colors"
                   >
                     <Flag size={14} />
