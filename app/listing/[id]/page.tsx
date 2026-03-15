@@ -1,8 +1,6 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import dynamicImport from "next/dynamic"; // ✅ Required for Paystack
-
 import { RoommateStatus } from "@/components/RoommateStatus";
 import { ListingGallery } from "@/components/ListingGallery";
 import { SaveButton } from "@/components/SaveButton";
@@ -15,22 +13,9 @@ import {
   Flag,
   Lock,
 } from "lucide-react";
+import { BookingWidgetWrapper } from "@/components/BookingWidgetWrapper";
 
 export const dynamic = "force-dynamic";
-
-// ✅ THE FIX: Dynamically import the BookingWidget so Paystack ONLY loads in the browser.
-// Make sure there is NO static `import { BookingWidget }` at the top!
-const BookingWidget = dynamicImport(
-  () => import("@/components/BookingWidget").then((mod) => mod.BookingWidget),
-  {
-    ssr: false, // This tells Next.js: "Do not run this on the server!"
-    loading: () => (
-      <div className="h-64 w-full rounded-2xl bg-white/5 border border-white/10 animate-pulse flex items-center justify-center text-gray-500">
-        Loading payment securely...
-      </div>
-    ),
-  },
-);
 
 type Props = {
   params: Promise<{ id: string }>;
@@ -180,7 +165,7 @@ export default async function ListingDetailPage(props: Props) {
           <div className="lg:col-span-1">
             <div className="sticky top-24 space-y-6">
               {/* Passed userEmail to the Dynamic BookingWidget */}
-              <BookingWidget listing={listing} userEmail={user?.email} />
+              <BookingWidgetWrapper listing={listing} userEmail={user?.email} />
 
               {/* Verified Landlord Card */}
               <div className="rounded-2xl border border-white/10 bg-[#0B1D2E] p-6 shadow-lg">
