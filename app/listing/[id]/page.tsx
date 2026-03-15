@@ -1,7 +1,7 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import dynamic from "next/dynamic"; // ✅ Required for Paystack
+import dynamicImport from "next/dynamic"; // ✅ Required for Paystack
 
 import { RoommateStatus } from "@/components/RoommateStatus";
 import { ListingGallery } from "@/components/ListingGallery";
@@ -13,13 +13,14 @@ import {
   CheckCircle,
   ShieldAlert,
   Flag,
+  Lock,
 } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
 // ✅ THE FIX: Dynamically import the BookingWidget so Paystack ONLY loads in the browser.
 // Make sure there is NO static `import { BookingWidget }` at the top!
-const BookingWidget = dynamic(
+const BookingWidget = dynamicImport(
   () => import("@/components/BookingWidget").then((mod) => mod.BookingWidget),
   {
     ssr: false, // This tells Next.js: "Do not run this on the server!"
